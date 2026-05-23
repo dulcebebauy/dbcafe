@@ -166,6 +166,25 @@ body {
 .login-btn:hover { filter: brightness(1.08); }
 .login-btn:active { transform: scale(0.98); }
 
+.login-btn-loading { display: none; align-items: center; gap: 8px; }
+.login-btn-default { display: flex; align-items: center; gap: 8px; }
+
+.login-btn.loading {
+  opacity: 0.85;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+.login-btn.loading .login-btn-default { display: none; }
+.login-btn.loading .login-btn-loading { display: flex; }
+
+@keyframes login-spin {
+  to { transform: rotate(360deg); }
+}
+.login-spinner {
+  animation: login-spin 0.75s linear infinite;
+  transform-origin: center;
+}
+
 /* ===== HEADER ===== */
 .header {
   flex-shrink: 0;

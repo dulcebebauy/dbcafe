@@ -120,32 +120,42 @@ async function doLogin() {
   const email    = document.getElementById("loginUser").value.trim();
   const password = document.getElementById("loginPass").value;
   const errorEl  = document.getElementById("loginError");
+  const btn      = document.getElementById("loginBtn");
   errorEl.textContent = "";
 
   if (!email)    { errorEl.textContent = "Ingresá el email"; return; }
   if (!password) { errorEl.textContent = "Ingresá la contraseña"; return; }
 
-  const { data, error } = await window.supabase_res.auth.signInWithPassword({ email, password });
+  btn.classList.add("loading");
 
-  if (error) {
-    errorEl.textContent = "Credenciales inválidas";
-    return;
+  try {
+    const { data, error } = await window.supabase_res.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      errorEl.textContent = "Credenciales inválidas";
+      btn.classList.remove("loading");
+      return;
+    }
+
+    const { data: usuario, error: errorUsuario } = await window.supabase_res
+      .from("usuarios")
+      .select("*")
+      .eq("auth_user_id", data.user.id)
+      .single();
+
+    if (errorUsuario || !usuario) { errorEl.textContent = "Usuario sin permisos"; btn.classList.remove("loading"); return; }
+    if (!usuario.activo)          { errorEl.textContent = "Usuario inactivo";      btn.classList.remove("loading"); return; }
+
+    usuarioActual = usuario;
+    await initMesas();
+    iniciarRealtimeMesas();
+    showMesasScreen();
+    cargarProductosSupabase();
+    // No quitamos loading: la pantalla cambia y el botón desaparece
+  } catch(e) {
+    errorEl.textContent = "Error de conexión";
+    btn.classList.remove("loading");
   }
-
-  const { data: usuario, error: errorUsuario } = await window.supabase_res
-    .from("usuarios")
-    .select("*")
-    .eq("auth_user_id", data.user.id)
-    .single();
-
-  if (errorUsuario || !usuario) { errorEl.textContent = "Usuario sin permisos"; return; }
-  if (!usuario.activo)          { errorEl.textContent = "Usuario inactivo"; return; }
-
-  usuarioActual = usuario;
-  await initMesas();
-  iniciarRealtimeMesas();
-  showMesasScreen();
-  cargarProductosSupabase();
 }
 
 async function doLogout() {
@@ -167,6 +177,7 @@ function showLogin() {
   document.getElementById("loginUser").value  = "";
   document.getElementById("loginPass").value  = "";
   document.getElementById("loginError").textContent = "";
+  document.getElementById("loginBtn")?.classList.remove("loading");
 }
 
 function showPOS() {
