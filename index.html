@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#1d4ed8">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>POS</title>
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="icon-192.png">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="pos.css">
+<link rel="stylesheet" href="reporte_gastos.css">
+<style>
+.mesa-card {
+  background: #fff;
+  border-radius: 16px;
+  border: 2px solid #e2e8f0;
+  padding: 18px 12px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s, border-color .15s;
+  user-select: none;
+}
+.mesa-card:active { transform: scale(.95); }
+.mesa-card:hover  { box-shadow: 0 4px 18px rgba(0,0,0,.1); border-color: #cbd5e1; }
+.mesa-card.ocupada { border-color: #1d4ed8; background: #eff6ff; }
+.mesa-card.ocupada .mesa-status { color: #1d4ed8; }
+.mesa-num {
+  font-size: 11px;
+  font-weight: 500;
+  color: #94a3b8;
+  letter-spacing: .3px;
+}
+.mesa-icon { font-size: 30px; line-height: 1; }
+.mesa-status { font-size: 15px; font-weight: 700; color: #0f172a; }
+.mesa-items {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 500;
+  background: #f1f5f9;
+  border-radius: 6px;
+  padding: 2px 8px;
+}
+.mesa-nombre {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  text-align: center;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mesa-card .edit-hint { font-size: 10px; color: #cbd5e1; margin-top: -2px; }
+
+.nombre-modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  z-index: 900;
+  align-items: center;
+  justify-content: center;
+}
+.nombre-modal-overlay.open { display: flex; }
+.nombre-modal {
+  background: #fff;
+  border-radius: 18px;
+  padding: 24px 20px 18px;
+  width: min(320px, 90vw);
+  box-shadow: 0 20px 60px rgba(0,0,0,.18);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.nombre-modal-title { font-size: 16px; font-weight: 700; color: #0f172a; }
+.nombre-modal input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 15px;
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color .15s;
+}
+.nombre-modal input:focus { border-color: #1d4ed8; }
+.nombre-modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
+.nombre-modal-btns button {
+  padding: 8px 18px;
+  border-radius: 9px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+.btn-cancelar-nombre { background: #f1f5f9; color: #64748b; }
+.btn-guardar-nombre  { background: #1d4ed8; color: #fff; }
+
+#usuarioHeader {
+  background-color: #c303c3;
+  border-radius: 5px;
+  padding: 0 8px;
+  color: white !important;
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 46px;
+  height: 26px;
+  flex-shrink: 0;
+}
+.toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: #cbd5e1;
+  border-radius: 26px;
+  transition: background .2s;
+}
+.toggle-slider::before {
+  content: "";
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  left: 3px;
+  top: 3px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform .2s;
+  box-shadow: 0 1px 4px rgba(0,0,0,.2);
+}
+.toggle-switch input:checked + .toggle-slider { background: #1d4ed8; }
+.toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
+.toggle-label-text { font-size: 14px; font-weight: 600; color: #0f172a; }
+.toggle-on-text  { color: #1d4ed8; }
+.toggle-off-text { color: #94a3b8; }
+.toggle-hint { font-size: 12px; color: #94a3b8; margin: 6px 0 0 0; line-height: 1.4; }
+
+/* ── Menú administrador ── */
+.admin-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: #fff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.13);
+  min-width: 190px;
+  z-index: 500;
+  overflow: hidden;
+  animation: menuFadeIn .15s ease;
+}
+@keyframes menuFadeIn {
+  from { opacity: 0; transform: translateY(-6px) scale(.97); }
+  to   { opacity: 1; transform: translateY(0)  scale(1);    }
+}
+.admin-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 13px 18px;
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+  cursor: pointer;
+  text-align: left;
+  transition: background .12s;
+}
+.admin-menu-item:hover { background: #f1f5f9; }
+.admin-menu-item + .admin-menu-item {
+  border-top: 1px solid #f1f5f9;
+}
+.admin-menu-item svg { color: #1d4ed8; flex-shrink: 0; }
+
+/* ── Panel Gastos ── */
+.gastos-panel {
+  position: fixed;
+  inset: 0;
+  background: #f8fafc;
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform .3s cubic-bezier(.4,0,.2,1);
+}
+.gastos-panel.open { transform: translateX(0); }
+.gastos-header {
+  background: #fff;
+  border-bottom: 1.5px solid #e2e8f0;
+  padding: 0 16px;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+.gastos-header-row1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 0 10px;
+}
+.gastos-header-title { font-size: 18px; font-weight: 800; color: #0f172a; flex: 1; }
+.gastos-tabs {
+  display: flex;
+  margin: 0 -16px;
+  padding: 0 16px;
+}
+.gastos-tab {
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #94a3b8;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-bottom: 2.5px solid transparent;
+  font-family: inherit;
+  transition: color .15s, border-color .15s;
+}
+.gastos-tab.active      { color: #1d4ed8; border-bottom-color: #1d4ed8; }
+.gastos-tab:disabled    { opacity: .45; cursor: not-allowed; }
+.gastos-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.gastos-json-area {
+  width: 100%;
+  min-height: 180px;
+  padding: 12px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: #334155;
+  background: #fff;
+  resize: vertical;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color .15s;
+  line-height: 1.55;
+}
+.gastos-json-area:focus { border-color: #1d4ed8; }
+.gastos-json-area.error { border-color: #ef4444; }
+.gastos-json-area.valid { border-color: #22c55e; }
+.gastos-parse-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  background: #1d4ed8;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .15s;
+}
+.gastos-parse-btn:hover    { background: #1e40af; }
+.gastos-parse-btn:disabled { opacity: .5; cursor: not-allowed; }
+.gasto-preview-card {
+  background: #fff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 16px;
+  overflow: hidden;
+}
+.gasto-preview-head {
+  background: #eff6ff;
+  border-bottom: 1px solid #dbeafe;
+  padding: 14px 16px;
+}
+.gasto-preview-empresa { font-size: 14px; font-weight: 800; color: #1e40af; }
+.gasto-preview-meta    { font-size: 12px; color: #64748b; margin-top: 3px; }
+.gasto-preview-section { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; }
+.gasto-preview-section:last-child { border-bottom: none; }
+.gasto-preview-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  margin-bottom: 10px;
+}
+.gasto-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px dashed #f1f5f9;
+  font-size: 13px;
+}
+.gasto-item-row:last-child  { border-bottom: none; }
+.gasto-item-desc            { color: #334155; font-weight: 500; flex: 1; }
+.gasto-item-qty             { color: #94a3b8; font-size: 11px; white-space: nowrap; }
+.gasto-item-price           { color: #0f172a; font-weight: 700; white-space: nowrap; }
+.gasto-rubro-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 20px;
+  background: #f1f5f9;
+  color: #64748b;
+  margin-left: 6px;
+}
+.gasto-rubro-select {
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  color: #64748b;
+  background: #f1f5f9;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 2px 22px 2px 8px;
+  margin-left: 6px;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+  transition: border-color .15s, color .15s;
+  max-width: 130px;
+}
+.gasto-rubro-select:focus { border-color: #1d4ed8; color: #1d4ed8; }
+.gasto-rubro-select.asignado { background-color: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+.gasto-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+}
+.gasto-total-row span:last-child { color: #1d4ed8; }
+.gasto-pago-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #64748b;
+  padding: 3px 0;
+}
+.gastos-confirm-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 14px;
+  border: none;
+  background: #16a34a;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .15s;
+  margin-top: 4px;
+}
+.gastos-confirm-btn:hover    { background: #15803d; }
+.gastos-confirm-btn:disabled { opacity: .5; cursor: not-allowed; }
+.gastos-error-msg {
+  background: #fef2f2;
+  border: 1.5px solid #fecaca;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #dc2626;
+  font-weight: 500;
+  display: none;
+}
+.gastos-error-msg.visible { display: block; }
+.gastos-soon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 48px 24px;
+  text-align: center;
+}
+.gastos-soon-title { font-size: 16px; font-weight: 700; color: #cbd5e1; }
+.gastos-soon-sub   { font-size: 13px; color: #cbd5e1; }
+</style>
+</head>
+
+<audio id="successSound" src="success_premium.mp3" preload="auto"></audio>
+<body>
+
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-icon">
+        <img src="icon-192.png" style="width:200%;"/>
+      </div>
+    </div>
+    <div class="login-title">POS</div>
+    <p class="login-sub">Ingresá tus credenciales para continuar</p>
+    <div class="login-field">
+      <label for="loginUser">Email</label>
+      <input type="email" id="loginUser">
+    </div>
+    <div class="login-field">
+      <label for="loginPass">Contraseña</label>
+      <input type="password" id="loginPass" placeholder="Contraseña" autocomplete="current-password">
+    </div>
+    <div class="login-error" id="loginError"></div>
+    <button class="login-btn" data-action="doLogin">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+        <polyline points="10 17 15 12 10 7"/>
+        <line x1="15" y1="12" x2="3" y2="12"/>
+      </svg>
+      Ingresar
+    </button>
+  </div>
+</div>
+
+<div id="mesasScreen" style="display:none;flex-direction:column;height:100%;background:var(--bg,#f1f5f9);">
+  <header class="header" style="justify-content:space-between;align-items:center;gap:10px;">
+    <button class="logout-btn" data-action="doLogout" title="Cerrar sesión">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+        <polyline points="16 17 21 12 16 7"/>
+        <line x1="21" y1="12" x2="9" y2="12"/>
+      </svg>
+    </button>
+    <div style="display:flex;flex-direction:column;align-items:center;flex:1;">
+      <div style="font-size:17px;font-weight:700;color:var(--fg,#0f172a);letter-spacing:-0.3px;">Mesas</div>
+      <div id="usuarioHeader" style="font-size:12px;font-weight:600;color:#64748b;margin-top:2px;"></div>
+    </div>
+    <!-- Menú administrador -->
+    <div id="adminMenuWrap" style="position:relative;display:none;">
+      <button class="report-btn" id="adminMenuBtn" data-action="toggleAdminMenu" title="Menú administrador" aria-haspopup="true" aria-expanded="false">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="3" y1="6"  x2="21" y2="6"/>
+          <line x1="3" y1="12" x2="21" y2="12"/>
+          <line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+      <div id="adminMenu" class="admin-dropdown" style="display:none;">
+        <button class="admin-menu-item" data-action="adminMenuAction" data-arg="reporte">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10"/>
+            <line x1="12" y1="20" x2="12" y2="4"/>
+            <line x1="6" y1="20" x2="6" y2="14"/>
+            <path d="M2 20h20"/>
+          </svg>
+          Reporte ingresos
+        </button>
+        <button class="admin-menu-item" data-action="adminMenuAction" data-arg="reporte-gastos">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10"/>
+            <line x1="12" y1="20" x2="12" y2="4"/>
+            <line x1="6" y1="20" x2="6" y2="14"/>
+            <path d="M2 20h20"/>
+          </svg>
+          Reporte gastos
+        </button>
+        <button class="admin-menu-item" data-action="adminMenuAction" data-arg="producto">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14"/><path d="M12 5v14"/>
+          </svg>
+          Agregar producto
+        </button>
+        <button class="admin-menu-item" data-action="adminMenuAction" data-arg="gastos">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+          Cargar gasto
+        </button>
+      </div>
+    </div>
+  </header>
+  <main style="flex:1;overflow-y:auto;padding:16px;">
+    <div id="mesasGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;max-width:700px;margin:0 auto;"></div>
+  </main>
+</div>
+
+<div id="posApp" style="display:none;flex-direction:column;height:100%;">
+
+  <div class="pay-loader hidden" id="payLoader">
+    <div class="spinner"></div>
+    <p>Procesando pago...</p>
+  </div>
+
+  <div class="toast-wrap" id="toastWrap"></div>
+
+  <header class="header">
+    <button class="report-btn" data-action="volverAMesas" title="Volver a mesas" id="btnVolverMesas" style="display:none;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M15 18l-6-6 6-6"/>
+      </svg>
+    </button>
+    <button class="report-btn" data-action="recargarProductos" data-arg="true" title="Recargar productos">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>
+        <path d="M21 3v5h-5"/>
+      </svg>
+    </button>
+    <div class="search-wrap">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="text" id="search" placeholder="Buscar producto..." data-oninput="handleSearch" autocomplete="off">
+      <button class="icon-btn" id="search-clear" data-action="clearSearch" style="background:none;border:none;width:30px;height:30px;border-radius:6px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+    <div class="total-box">
+      <span class="total-label">Total</span>
+      <div class="total-amount" id="totalAmount">$0</div>
+      <div id="mesaBadge" style="display:none;font-size:11px;font-weight:600;color:var(--primary,#1d4ed8);letter-spacing:.2px;margin-top:1px;white-space:nowrap;"></div>
+    </div>
+  </header>
+
+  <div class="cat-filter-bar" id="catFilterBar">
+    <button class="cat-chip active" data-cat="todos" data-action="setCatFilter" data-cat="todos">Todos</button>
+    <button class="cat-chip" data-cat="bebidas_calientes" data-action="setCatFilter" data-cat="bebidas_calientes"><span class="chip-dot" style="background:#f97316"></span>☕ Bebidas calientes</button>
+    <button class="cat-chip" data-cat="bebidas_frias" data-action="setCatFilter" data-cat="bebidas_frias"><span class="chip-dot" style="background:#06b6d4"></span>🍹 Bebidas frías</button>
+    <button class="cat-chip" data-cat="dulces" data-action="setCatFilter" data-cat="dulces"><span class="chip-dot" style="background:#ec4899"></span>🍰 Dulces</button>
+    <button class="cat-chip" data-cat="postres" data-action="setCatFilter" data-cat="postres"><span class="chip-dot" style="background:#8b5cf6"></span>🍮 Postres</button>
+    <button class="cat-chip" data-cat="salados" data-action="setCatFilter" data-cat="salados"><span class="chip-dot" style="background:#84cc16"></span>🥪 Salados</button>
+    <button class="cat-chip" data-cat="tortas" data-action="setCatFilter" data-cat="tortas"><span class="chip-dot" style="background:#f59e0b"></span>🎂 Tortas</button>
+    <button class="cat-chip" data-cat="meriendas" data-action="setCatFilter" data-cat="meriendas"><span class="chip-dot" style="background:#10b981"></span>🥐 Meriendas</button>
+  </div>
+
+  <main class="main">
+    <div id="stateCenter" class="state-center"><div class="spinner"></div></div>
+    <div class="grid" id="grid"></div>
+  </main>
+
+  <button class="fab hidden" id="fab" data-action="openDrawer">
+    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+    Ver Carrito
+    <span class="fab-badge" id="fabBadge">0</span>
+  </button>
+
+  <div class="overlay" id="overlay" data-action="closeDrawer"></div>
+
+  <div class="drawer" id="drawer">
+    <div class="drawer-head">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="drawer-title">Carrito</span>
+        <span id="drawerMesaBadge" style="display:none;font-size:12px;font-weight:700;background:var(--primary,#1d4ed8);color:#fff;border-radius:6px;padding:2px 9px;letter-spacing:.2px;"></span>
+      </div>
+      <button class="icon-btn" data-action="closeDrawer">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+    <div class="drawer-items" id="drawerItems">
+      <div class="empty-cart">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+        <p>El carrito está vacío</p>
+      </div>
+    </div>
+    <div class="drawer-footer">
+      <div class="discount-row">
+        <input type="number" id="discount" placeholder="Desc. %" min="0" max="100" data-oninput="updateDrawerTotal">
+        <input type="text" id="discountDesc" placeholder="Motivo del descuento">
+      </div>
+      <div class="totals" id="totalsBox">
+        <div class="totals-row" id="subtotalRow"><span>Subtotal</span><span id="subtotalVal">$0</span></div>
+        <div class="totals-row discount" id="discountRow" style="display:none">
+          <span id="discountLabel">Descuento (0%)</span>
+          <span id="discountVal">-$0</span>
+        </div>
+        <div class="totals-row total-final"><span>Total</span><span id="cartTotal">$0</span></div>
+      </div>
+      <div class="pay-row">
+        <button class="pay-btn cash"   data-action="abrirCambio" data-arg="efectivo" id="btnEfectivo" disabled>Efectivo</button>
+        <button class="pay-btn debit"  data-action="pagar" data-arg="debito"         id="btnDebito"   disabled>Débito</button>
+        <button class="pay-btn credit" data-action="pagar" data-arg="credito"        id="btnCredito"  disabled>Crédito</button>
+      </div>
+      <button class="clear-btn" id="clearBtn" data-action="clearCart" disabled>Vaciar carrito</button>
+    </div>
+  </div>
+
+  <div class="cambio-modal-overlay" id="cambioModalOverlay" data-action="handleCambioOverlayClick">
+    <div class="cambio-modal">
+      <div class="cambio-modal-head">
+        <span class="cambio-modal-title">Pago en efectivo</span>
+        <button class="icon-btn" data-action="cerrarCambio">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+      <div class="cambio-modal-body">
+        <div>
+          <div class="cambio-total-label">Total a cobrar</div>
+          <div class="cambio-total-val" id="cambioTotalVal">$0</div>
+        </div>
+        <div class="cambio-field">
+          <label for="cambioMonto">Monto recibido</label>
+          <input type="number" id="cambioMonto" placeholder="0" min="0" data-oninput="calcularCambio" inputmode="numeric">
+        </div>
+        <div class="cambio-quick-btns" id="cambioQuickBtns"></div>
+        <div class="cambio-result">
+          <span class="cambio-result-label">Vuelto</span>
+          <span class="cambio-result-val" id="cambioResultVal">—</span>
+        </div>
+      </div>
+      <div class="cambio-modal-footer">
+        <button class="cambio-cancel-btn" data-action="cerrarCambio">Cancelar</button>
+        <button class="cambio-confirm-btn" id="cambioPagarBtn" data-action="confirmarPagoEfectivo" disabled>Confirmar pago</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="report-panel" id="reportPanel">
+  <div class="report-header">
+    <div class="report-header-row1">
+      <button class="icon-btn" data-action="closeReport">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="report-header-titles">
+        <div class="report-header-title">Reporte de Ventas</div>
+        <div class="report-header-sub" id="reportSubtitle">Cargando datos...</div>
+      </div>
+    </div>
+    <div class="report-header-row2">
+      <button class="backup-btn" id="backupBtn" data-action="generarRespaldo" title="Generar respaldo">
+        <svg class="icon-backup" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <svg class="icon-spin" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+        Respaldo
+      </button>
+      <button class="backup-btn" data-action="cargarVentas" data-arg="true" title="Actualizar ventas">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>
+          <path d="M21 3v5h-5"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+  <div class="report-body" id="reportBody">
+    <div class="filter-card">
+      <h3>Filtrar por fecha</h3>
+      <div class="filter-row">
+        <div class="filter-group">
+          <label for="fechaDesde">Desde</label>
+          <input type="date" id="fechaDesde">
+        </div>
+        <div class="filter-group">
+          <label for="fechaHasta">Hasta</label>
+          <input type="date" id="fechaHasta">
+        </div>
+        <button class="filter-apply-btn" data-action="aplicarFiltro">Aplicar</button>
+      </div>
+      <div class="quick-filters">
+        <button class="qf-btn" data-action="setQuickFilter" data-qf="hoy">Hoy</button>
+        <button class="qf-btn" data-action="setQuickFilter" data-qf="semana">Esta semana</button>
+        <button class="qf-btn" data-action="setQuickFilter" data-qf="mes">Este mes</button>
+        <button class="qf-btn" data-action="setQuickFilter" data-qf="todo">Todo</button>
+      </div>
+    </div>
+    <div id="reportContent">
+      <div class="report-loading"><div class="spinner"></div><span>Cargando ventas...</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     PANEL GASTOS
+══════════════════════════════════════ -->
+<div class="gastos-panel" id="gastosPanel">
+  <div class="gastos-header">
+    <div class="gastos-header-row1">
+      <button class="icon-btn" data-action="closeGastos">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="gastos-header-title">Cargar Gasto</div>
+    </div>
+    <div class="gastos-tabs">
+      <button class="gastos-tab active" id="tabJson" data-action="switchGastosTab" data-arg="json">📄 Subir JSON</button>
+      <button class="gastos-tab" id="tabManual" data-action="switchGastosTab" data-arg="manual" disabled title="Próximamente">✏️ Manual</button>
+    </div>
+  </div>
+
+  <!-- TAB JSON -->
+  <div class="gastos-body" id="gastosTabJson">
+    <p style="font-size:13px;color:#64748b;margin:0;">
+      Pegá el JSON de la factura electrónica. Se mostrará una vista previa antes de confirmar el guardado.
+    </p>
+    <div class="gastos-error-msg" id="gastosJsonError"></div>
+    <textarea
+      class="gastos-json-area"
+      id="gastosJsonInput"
+      placeholder='{"empresa": "...", "fecha": "...", "total": 0, ...}'
+      data-oninput="onGastosJsonInput"
+    ></textarea>
+    <button class="gastos-parse-btn" id="gastosParseBtn" data-action="parsearGastoJson">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      Vista previa
+    </button>
+
+    <!-- Preview (oculta hasta parsear) -->
+    <div id="gastosPreview" style="display:none;display:flex;flex-direction:column;gap:14px;">
+
+      <div class="gasto-preview-card" id="gastosPreviewCard">
+        <!-- se renderiza dinámicamente -->
+      </div>
+
+      <button class="gastos-confirm-btn" id="gastosConfirmBtn" data-action="confirmarGasto">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+        Confirmar y guardar
+      </button>
+    </div>
+  </div>
+
+  <!-- TAB MANUAL (próximamente) -->
+  <div class="gastos-body" id="gastosTabManual" style="display:none;">
+    <div class="gastos-soon">
+      <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>
+      <div class="gastos-soon-title">Carga manual</div>
+      <div class="gastos-soon-sub">Próximamente podrás ingresar gastos de forma manual, sin necesidad de un JSON.</div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="productModalOverlay" data-action="handleModalOverlayClick">
+  <div class="modal" id="productModal">
+    <div class="modal-head">
+      <span class="modal-title" id="productModalTitle">Agregar Producto</span>
+      <button class="icon-btn" data-action="closeProductModal">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="prodId">
+      <div class="form-group">
+        <label for="prodNombre">Nombre *</label>
+        <input type="text" id="prodNombre" placeholder="Ej: Café con leche" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label for="prodDescripcion">Descripción</label>
+        <textarea id="prodDescripcion" placeholder="Descripción opcional del producto..."></textarea>
+      </div>
+      <div class="form-group">
+        <label for="prodPrecio">Precio *</label>
+        <input type="number" id="prodPrecio" placeholder="0" min="0" step="1">
+      </div>
+      <div class="form-group">
+        <label>Categoría *</label>
+        <div class="category-grid">
+          <label><input type="radio" name="prodCategoria" class="cat-option" value="bebidas_calientes" id="catBC"><span class="cat-label"><span class="cat-dot" style="background:#f97316"></span>Bebidas calientes</span></label>
+          <label><input type="radio" name="prodCategoria" class="cat-option" value="bebidas_frias" id="catBF"><span class="cat-label"><span class="cat-dot" style="background:#06b6d4"></span>Bebidas frías</span></label>
+          <label><input type="radio" name="prodCategoria" class="cat-option" value="dulces" id="catDu"><span class="cat-label"><span class="cat-dot" style="background:#ec4899"></span>Dulces</span></label>
+          <label><input type="radio" name="prodCategoria" class="cat-option" value="postres" id="catPo"><span class="cat-label"><span class="cat-dot" style="background:#8b5cf6"></span>Postres</span></label>
+          <label><input type="radio" name="prodCategoria" class="cat-option" value="salados" id="catSa"><span class="cat-label"><span class="cat-dot" style="background:#84cc16"></span>Salados</span></label>
+          <label><input type="radio" name="prodCategoria" class="cat-option" value="tortas" id="catTo"><span class="cat-label"><span class="cat-dot" style="background:#f59e0b"></span>Tortas</span></label>
+          <label><input type="radio" name="prodCategoria" class="cat-option" value="meriendas" id="catMe"><span class="cat-label"><span class="cat-dot" style="background:#10b981"></span>Meriendas</span></label>
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:4px;">
+        <label style="margin-bottom:10px;display:block;">Visibilidad en la carta</label>
+        <label class="toggle-row" for="prodMostrarCarta">
+          <span class="toggle-switch">
+            <input type="checkbox" id="prodMostrarCarta" checked>
+            <span class="toggle-slider"></span>
+          </span>
+          <span class="toggle-label-text">
+            <span class="toggle-on-text" id="toggleCartaOn">Visible en la carta</span>
+            <span class="toggle-off-text" id="toggleCartaOff" style="display:none;">Oculto en la carta</span>
+          </span>
+        </label>
+        <p class="toggle-hint">Si está activo, el producto aparecerá en la carta digital.</p>
+        <label class="toggle-row" for="prodMostrarPrecioCarta" style="margin-top:10px;" id="rowMostrarPrecio">
+          <span class="toggle-switch">
+            <input type="checkbox" id="prodMostrarPrecioCarta" checked>
+            <span class="toggle-slider"></span>
+          </span>
+          <span class="toggle-label-text">
+            <span class="toggle-on-text" id="togglePrecioOn">Precio visible en la carta</span>
+            <span class="toggle-off-text" id="togglePrecioOff" style="display:none;">Precio oculto en la carta</span>
+          </span>
+        </label>
+        <p class="toggle-hint" id="hintMostrarPrecio">Si está activo, el precio se mostrará junto al producto en la carta.</p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-delete-btn" id="deleteProductBtn" data-action="eliminarProducto" style="display:none">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+      </button>
+      <button class="modal-cancel-btn" data-action="closeProductModal">Cancelar</button>
+      <button class="modal-save-btn" id="saveProductBtn" data-action="guardarProducto">
+        <svg class="icon-spin-save" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+        <span class="save-label">Guardar</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="nombre-modal-overlay" id="nombreModalOverlay" data-action="handleNombreOverlayClick">
+  <div class="nombre-modal">
+    <div class="nombre-modal-title" id="nombreModalTitle">Nombre de la mesa</div>
+    <input type="text" id="nombreModalInput" placeholder="Ej: Terraza, Ventana, VIP..." maxlength="20" autocomplete="off">
+    <div class="nombre-modal-btns">
+      <button class="btn-cancelar-nombre" data-action="cerrarNombreModal">Cancelar</button>
+      <button class="btn-guardar-nombre"  data-action="guardarNombreMesa">Guardar</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     PANEL REPORTE GASTOS
+══════════════════════════════════════ -->
+<div class="gastos-report-panel" id="gastosReportPanel">
+  <div class="gastos-header">
+    <div class="gastos-header-row1">
+      <button class="icon-btn" data-action="closeGastosReport">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="gastos-header-title">Reporte de Gastos</div>
+      <button class="backup-btn" data-action="cargarGastos" title="Actualizar" style="margin-left:auto;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="gastos-body" style="gap:14px;">
+    <!-- Filtros -->
+    <div class="filter-card">
+      <h3>Filtrar por fecha</h3>
+      <div class="filter-row">
+        <div class="filter-group">
+          <label for="grFechaDesde">Desde</label>
+          <input type="date" id="grFechaDesde">
+        </div>
+        <div class="filter-group">
+          <label for="grFechaHasta">Hasta</label>
+          <input type="date" id="grFechaHasta">
+        </div>
+        <button class="filter-apply-btn" data-action="aplicarFiltroGastos">Aplicar</button>
+      </div>
+      <div class="quick-filters">
+        <button class="qf-btn" id="grQf_hoy"    data-action="setQuickFilterGastos" data-qf="hoy">Hoy</button>
+        <button class="qf-btn" id="grQf_semana" data-action="setQuickFilterGastos" data-qf="semana">Esta semana</button>
+        <button class="qf-btn" id="grQf_mes"    data-action="setQuickFilterGastos" data-qf="mes">Este mes</button>
+        <button class="qf-btn" id="grQf_todo"   data-action="setQuickFilterGastos" data-qf="todo">Todo</button>
+      </div>
+      <div class="gr-rubro-chips" id="grRubroChips"></div>
+    </div>
+    <!-- Contenido dinámico -->
+    <div id="gastosReportContent">
+      <div class="report-loading"><div class="spinner"></div><span>Cargando gastos...</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- Supabase -->
+
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>

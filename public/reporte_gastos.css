@@ -1,0 +1,139 @@
+/* ── Panel Reporte Gastos ── */
+.gastos-report-panel {
+  position: fixed;
+  inset: 0;
+  background: #f8fafc;
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform .3s cubic-bezier(.4,0,.2,1);
+}
+.gastos-report-panel.open { transform: translateX(0); }
+
+.gr-rubro-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.gr-rubro-chip {
+  padding: 5px 13px;
+  border-radius: 20px;
+  border: 1.5px solid #e2e8f0;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .12s, border-color .12s, color .12s;
+}
+.gr-rubro-chip.active { background: #eff6ff; border-color: #1d4ed8; color: #1d4ed8; }
+
+.gr-summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.gr-summary-card {
+  background: #fff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.gr-summary-label { font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: .5px; }
+.gr-summary-value { font-size: 20px; font-weight: 800; color: #0f172a; }
+.gr-summary-card.red   .gr-summary-value { color: #dc2626; }
+.gr-summary-card.blue  .gr-summary-value { color: #1d4ed8; }
+.gr-summary-card.green .gr-summary-value { color: #16a34a; }
+
+.gr-table-card {
+  background: #fff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  overflow: hidden;
+}
+.gr-table-card h3 {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid #f1f5f9;
+  margin: 0;
+}
+
+.gr-gasto-row {
+  border-bottom: 1px solid #f1f5f9;
+}
+.gr-gasto-row:last-child { border-bottom: none; }
+.gr-gasto-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 16px;
+  cursor: pointer;
+  user-select: none;
+}
+.gr-gasto-empresa { font-size: 13px; font-weight: 700; color: #0f172a; }
+.gr-gasto-meta    { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+.gr-gasto-total   { font-size: 14px; font-weight: 800; color: #dc2626; white-space: nowrap; }
+.gr-gasto-items   {
+  display: none;
+  padding: 0 16px 12px;
+  flex-direction: column;
+  gap: 4px;
+}
+.gr-gasto-row.open .gr-gasto-items { display: flex; }
+.gr-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #475569;
+  padding: 3px 0;
+  border-bottom: 1px dashed #f1f5f9;
+}
+.gr-item-row:last-child { border-bottom: none; }
+.gr-item-desc  { flex: 1; }
+.gr-item-rubro {
+  font-size: 10px;
+  font-weight: 600;
+  background: #f1f5f9;
+  color: #64748b;
+  border-radius: 20px;
+  padding: 1px 7px;
+  white-space: nowrap;
+}
+.gr-item-subtotal { font-weight: 700; color: #0f172a; white-space: nowrap; }
+
+.gr-por-rubro-card {
+  background: #fff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  overflow: hidden;
+}
+.gr-por-rubro-card h3 {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid #f1f5f9;
+  margin: 0;
+}
+.gr-rubro-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 13px;
+}
+.gr-rubro-row:last-child { border-bottom: none; }
+.gr-rubro-name  { font-weight: 600; color: #334155; }
+.gr-rubro-total { font-weight: 800; color: #dc2626; }
