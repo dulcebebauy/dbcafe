@@ -1393,6 +1393,7 @@ function switchGastosTab(tab) {
   document.getElementById("gastosTabManual").style.display = tab === "manual" ? "flex" : "none";
   document.getElementById("tabJson").classList.toggle("active",   tab === "json");
   document.getElementById("tabManual").classList.toggle("active", tab === "manual");
+  if (tab === "manual") gmInicializar();
 }
 
 function onGastosJsonInput() {
@@ -2039,6 +2040,10 @@ document.addEventListener("DOMContentLoaded", () => {
       case "cerrarNombreModal":      cerrarNombreModal();           break;
       case "guardarNombreMesa":      guardarNombreMesa();           break;
 
+      // Formulario manual de gastos
+      case "gmAgregarLinea":         gmAgregarLinea();             break;
+      case "guardarGastoManual":     guardarGastoManual();         break;
+
       // Reporte gastos
       case "closeGastosReport":      closeGastosReport();          break;
       case "cargarGastos":           cargarGastos();               break;
@@ -2113,6 +2118,256 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.target.matches(".gasto-rubro-select")) {
       onRubroChange(e.target);
     }
+    // Select de rubro en formulario manual
+    if (e.target.matches("[data-gm-field='rubro']")) {
+      const id = Number(e.target.dataset.gmId);
+      gmActualizarCampo(id, "rubro", e.target.value);
+    }
+  });
+
+  // ── Chips de modo de pago (formulario manual) ─────────────────
+  document.addEventListener("click", (e) => {
+    const chip = e.target.closest(".gm-pago-chip");
+    if (chip) {
+      document.querySelectorAll(".gm-pago-chip").forEach(c => c.classList.remove("active"));
+      chip.classList.add("active");
+      gmPagoSeleccionado = chip.dataset.pago;
+    }
+
+    // Eliminar línea de producto
+    const removeBtn = e.target.closest("[data-gm-remove]");
+    if (removeBtn) {
+      const id = Number(removeBtn.dataset.gmRemove);
+      // No eliminar si es la única línea
+      const rows = document.querySelectorAll("#gmProductosContainer .gm-producto-row");
+      if (rows.length > 1) {
+        gmEliminarLinea(id);
+      }
+    }
+  });
+
+  // ── Inputs de líneas de producto (formulario manual) ──────────
+  document.addEventListener("input", (e) => {
+    const field = e.target.dataset.gmField;
+    const id    = Number(e.target.dataset.gmId);
+    if (field && id && field !== "rubro") {
+      gmActualizarCampo(id, field, e.target.value);
+    }
   });
 
 });
+
+
+/* ═══════════════════════════════════════════════════════════════
+   CARGA MANUAL DE GASTOS
+═══════════════════════════════════════════════════════════════ */
+
+let gmPagoSeleccionado = null;
+let gmLineas = [];      // [{ id, descripcion, rubro, cantidad, costo }]
+let gmLineasCounter = 0;
+
+function gmFechaHoy() {
+  const d = new Date();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${mm}-${dd}`;
+}
+
+function gmInicializar() {
+  document.getElementById("gmEmpresa").value     = "";
+  document.getElementById("gmFecha").value       = gmFechaHoy();
+  document.getElementById("gmNroFactura").value  = "";
+  document.getElementById("gmProductosContainer").innerHTML = "";
+  document.getElementById("gmTotalDisplay").textContent = fmtUYU(0);
+  document.querySelectorAll(".gm-pago-chip").forEach(c => c.classList.remove("active"));
+  document.querySelectorAll(".gm-input").forEach(i => i.classList.remove("error"));
+  document.getElementById("gastosManualError").textContent = "";
+  document.getElementById("gastosManualError").classList.remove("visible");
+  gmPagoSeleccionado = null;
+  gmLineas = [];
+  gmLineasCounter = 0;
+  // Empezar con una línea vacía
+  gmAgregarLinea();
+}
+
+function gmAgregarLinea() {
+  const id = ++gmLineasCounter;
+  gmLineas.push({ id, descripcion: "", rubro: "", cantidad: 1, costo: 0 });
+
+  const rubroOpts = RUBROS_GASTO.map(r =>
+    `<option value="${escHtml(r)}">${r || "— rubro —"}</option>`
+  ).join("");
+
+  const row = document.createElement("div");
+  row.className = "gm-producto-row";
+  row.dataset.lineaId = id;
+  row.innerHTML = `
+    <input class="gm-input" type="text"   placeholder="Descripción"  data-gm-field="descripcion" data-gm-id="${id}">
+    <select class="gm-input gasto-rubro-select" data-gm-field="rubro" data-gm-id="${id}">${rubroOpts}</select>
+    <input class="gm-input" type="number" placeholder="1"  min="0.01" step="any" value="1"  data-gm-field="cantidad" data-gm-id="${id}">
+    <input class="gm-input" type="number" placeholder="0"  min="0"    step="any" value=""   data-gm-field="costo"    data-gm-id="${id}">
+    <button class="gm-remove-btn" data-gm-remove="${id}" title="Eliminar línea">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+    </button>
+  `;
+  document.getElementById("gmProductosContainer").appendChild(row);
+}
+
+function gmEliminarLinea(id) {
+  gmLineas = gmLineas.filter(l => l.id !== id);
+  const row = document.querySelector(`[data-linea-id="${id}"]`);
+  if (row) row.remove();
+  gmRecalcularTotal();
+}
+
+function gmActualizarCampo(id, field, value) {
+  const linea = gmLineas.find(l => l.id === id);
+  if (!linea) return;
+  if (field === "cantidad" || field === "costo") {
+    linea[field] = parseFloat(value) || 0;
+  } else {
+    linea[field] = value;
+  }
+  gmRecalcularTotal();
+}
+
+function gmRecalcularTotal() {
+  const total = gmLineas.reduce((acc, l) => acc + (l.cantidad * l.costo), 0);
+  document.getElementById("gmTotalDisplay").textContent = fmtUYU(total);
+  return total;
+}
+
+function mostrarErrorManual(msg) {
+  const el = document.getElementById("gastosManualError");
+  el.textContent = msg;
+  el.classList.add("visible");
+  el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+async function guardarGastoManual() {
+  // Limpiar errores previos
+  document.getElementById("gastosManualError").classList.remove("visible");
+  document.querySelectorAll("#gastosTabManual .gm-input").forEach(i => i.classList.remove("error"));
+
+  // Validar campos obligatorios
+  const empresa = document.getElementById("gmEmpresa").value.trim();
+  const fecha   = document.getElementById("gmFecha").value.trim();
+  const nroFact = document.getElementById("gmNroFactura").value.trim();
+
+  if (!empresa) {
+    document.getElementById("gmEmpresa").classList.add("error");
+    mostrarErrorManual("El nombre de la empresa es obligatorio.");
+    return;
+  }
+  if (!fecha) {
+    document.getElementById("gmFecha").classList.add("error");
+    mostrarErrorManual("La fecha es obligatoria.");
+    return;
+  }
+  if (!gmPagoSeleccionado) {
+    mostrarErrorManual("Seleccioná un modo de pago.");
+    return;
+  }
+
+  // Armar productos desde el DOM (fuente de verdad)
+  const rows = document.querySelectorAll("#gmProductosContainer .gm-producto-row");
+  const productos = [];
+  for (const row of rows) {
+    const id       = Number(row.dataset.lineaId);
+    const desc     = row.querySelector("[data-gm-field='descripcion']").value.trim();
+    const rubro    = row.querySelector("[data-gm-field='rubro']").value;
+    const cantidad = parseFloat(row.querySelector("[data-gm-field='cantidad']").value) || 0;
+    const costo    = parseFloat(row.querySelector("[data-gm-field='costo']").value)    || 0;
+
+    if (!desc && cantidad === 0 && costo === 0) continue; // ignorar filas vacías
+
+    productos.push({
+      descripcion:     desc || "Sin descripción",
+      rubro:           rubro || null,
+      cantidad,
+      unidad:          null,
+      precio_unitario: costo,
+      subtotal:        cantidad * costo,
+    });
+  }
+
+  const total = productos.reduce((acc, p) => acc + p.subtotal, 0);
+
+  // Construir objeto igual al gastoParseado del flujo JSON
+  const d = {
+    empresa,
+    fecha,
+    numero_factura:   nroFact || null,
+    sucursal:         null,
+    rut:              null,
+    tipo_documento:   null,
+    hora:             null,
+    moneda:           "UYU",
+    forma_pago:       [{ medio: gmPagoSeleccionado, monto: total }],
+    impuestos:        [],
+    descuentos:       [],
+    subtotal:         total,
+    total,
+    observaciones:    null,
+    productos,
+  };
+
+  const btn = document.getElementById("gmGuardarBtn");
+  btn.disabled = true;
+  btn.innerHTML = `<div class="spinner" style="width:18px;height:18px;border-width:2.5px;border-color:rgba(255,255,255,.3);border-top-color:#fff;"></div> Guardando...`;
+
+  try {
+    const { data: gastoRow, error: errGasto } = await window.supabase_res
+      .from("gastos")
+      .insert({
+        empresa:          d.empresa,
+        sucursal:         d.sucursal,
+        direccion:        null,
+        rut:              d.rut,
+        tipo_documento:   d.tipo_documento,
+        numero_factura:   d.numero_factura,
+        fecha:            d.fecha,
+        hora:             d.hora,
+        moneda:           "UYU",
+        forma_pago:       d.forma_pago,
+        impuestos:        [],
+        descuentos:       [],
+        subtotal:         d.subtotal,
+        total:            d.total,
+        observaciones:    null,
+        usuario_username: usuarioActual?.username || null,
+        json_original:    d,
+      })
+      .select("id")
+      .single();
+
+    if (errGasto) throw errGasto;
+
+    if (productos.length > 0) {
+      const items = productos.map(p => ({
+        gasto_id:        gastoRow.id,
+        descripcion:     p.descripcion,
+        cantidad:        p.cantidad,
+        unidad:          p.unidad,
+        precio_unitario: p.precio_unitario,
+        subtotal:        p.subtotal,
+        rubro:           p.rubro,
+      }));
+
+      const { error: errItems } = await window.supabase_res
+        .from("gastos_items")
+        .insert(items);
+
+      if (errItems) throw errItems;
+    }
+
+    showToast("Gasto guardado correctamente.", "success");
+    closeGastos();
+
+  } catch(err) {
+    console.error("Error guardando gasto manual:", err);
+    mostrarErrorManual("No se pudo guardar el gasto: " + (err.message || "error desconocido"));
+    btn.disabled = false;
+    btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Guardar gasto`;
+  }
+}
