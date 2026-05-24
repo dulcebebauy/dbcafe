@@ -186,6 +186,7 @@ function showPOS() {
   posApp.style.display       = "flex";
   posApp.style.flexDirection = "column";
   posApp.style.height        = "100%";
+  if (typeof pushNavState === "function") pushNavState();
 }
 
 function showMesasScreen() {
@@ -713,6 +714,7 @@ function openDrawer() {
   document.body.style.overflow = "hidden";
   renderCartItems();
   updateDrawerTotal();
+  if (typeof pushNavState === "function") pushNavState();
 }
 
 function closeDrawer() {
@@ -977,6 +979,7 @@ function clearSearch() {
 function openReport() {
   document.getElementById("reportPanel").classList.add("open");
   if (ventasCache.length === 0) cargarVentas();
+  if (typeof pushNavState === "function") pushNavState();
 }
 
 function closeReport() {
@@ -1264,6 +1267,7 @@ function openProductModal(producto) {
 
   document.getElementById("productModalOverlay").classList.add("open");
   setTimeout(() => document.getElementById("prodNombre").focus(), 320);
+  if (typeof pushNavState === "function") pushNavState();
 }
 
 function closeProductModal() {
@@ -1394,6 +1398,7 @@ let gastoParseado = null; // objeto JSON parseado listo para guardar
 function openGastos() {
   resetGastosPanel();
   document.getElementById("gastosPanel").classList.add("open");
+  if (typeof pushNavState === "function") pushNavState();
 }
 
 function closeGastos() {
@@ -1781,6 +1786,7 @@ let gastosRubroFiltro = "todos"; // rubro activo en el chip filter
 async function openGastosReport() {
   document.getElementById("gastosReportPanel").classList.add("open");
   await cargarGastos();
+  if (typeof pushNavState === "function") pushNavState();
 }
 
 function closeGastosReport() {
@@ -1803,6 +1809,7 @@ function openAdminProd() {
 
   renderAdminProdGrid();
   document.getElementById("adminProdPanel").classList.add("open");
+  if (typeof pushNavState === "function") pushNavState();
 }
 
 function setAdminCatFilter(cat, btn) {
@@ -2508,3 +2515,84 @@ async function guardarGastoManual() {
     btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Guardar gasto`;
   }
 }
+
+
+/* ═══════════════════════════════════════════════════════════════
+   NAVEGACIÓN NATIVA - BOTÓN ATRÁS (Android / PWA)
+   ─────────────────────────────────────────────────────────────
+   Estrategia: history.pushState al abrir cada pantalla/panel.
+   El evento "popstate" (botón atrás físico) cierra la capa
+   superior. Doble toque en pantalla raíz → cierra la app.
+
+   Jerarquía de capas (más interna → más externa):
+     productModal > adminProd > gastosReport > gastos >
+     report > drawer > pos > mesas > login
+═══════════════════════════════════════════════════════════════ */
+
+// ── Función pública usada por los openers ──────────────────────
+function pushNavState() {
+  history.pushState({ pwaNav: true }, "");
+}
+
+// ── Qué capa está activa ───────────────────────────────────────
+function getActiveLayer() {
+  if (document.getElementById("productModalOverlay")?.classList.contains("open"))
+    return "productModal";
+  if (document.getElementById("adminProdPanel")?.classList.contains("open"))
+    return "adminProd";
+  if (document.getElementById("gastosReportPanel")?.classList.contains("open"))
+    return "gastosReport";
+  if (document.getElementById("gastosPanel")?.classList.contains("open"))
+    return "gastos";
+  if (document.getElementById("reportPanel")?.classList.contains("open"))
+    return "report";
+  if (document.getElementById("drawer")?.classList.contains("open"))
+    return "drawer";
+
+  const pos   = document.getElementById("posApp");
+  const mesas = document.getElementById("mesasScreen");
+
+  if (pos   && pos.style.display   !== "none" && pos.style.display   !== "")  return "pos";
+  if (mesas && mesas.style.display !== "none" && mesas.style.display !== "")  return "mesas";
+  return "login";
+}
+
+// ── Navegación hacia atrás ─────────────────────────────────────
+let _lastBackPress = 0;
+const _EXIT_DELAY  = 2000;
+
+function navigateBack() {
+  switch (getActiveLayer()) {
+    case "productModal":  closeProductModal();  break;
+    case "adminProd":     closeAdminProd();     break;
+    case "gastosReport":  closeGastosReport();  break;
+    case "gastos":        closeGastos();        break;
+    case "report":        closeReport();        break;
+    case "drawer":        closeDrawer();        break;
+    case "pos":           volverAMesas();       break;
+    default:
+      // Estamos en mesas o login → doble toque para salir
+      if (Date.now() - _lastBackPress < _EXIT_DELAY) {
+        try { window.close(); } catch (_) {}
+        navigator.app?.exitApp?.();
+      } else {
+        _lastBackPress = Date.now();
+        showToast("Presioná atrás de nuevo para salir", "info");
+      }
+  }
+}
+
+// ── Listener del botón atrás ───────────────────────────────────
+window.addEventListener("popstate", () => {
+  navigateBack();
+  // Mantener centinela si aún hay capas abiertas
+  if (!["login", "mesas"].includes(getActiveLayer())) {
+    pushNavState();
+  }
+});
+
+// ── Semilla inicial del history ────────────────────────────────
+window.addEventListener("load", () => {
+  history.replaceState({ pwaNav: true, root: true }, "");
+  pushNavState();
+});
