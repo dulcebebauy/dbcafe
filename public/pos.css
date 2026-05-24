@@ -22,6 +22,30 @@
   --shadow-xl: 0 20px 40px rgba(0,0,0,0.15);
 }
 
+/* ===== DARK MODE (gris azulado Material) ===== */
+[data-theme="dark"] {
+  --bg:        #0f172a;
+  --surface:   #1e293b;
+  --border:    #334155;
+  --primary:   #3b82f6;
+  --primary-fg:#ffffff;
+  --muted:     #1e293b;
+  --muted-fg:  #94a3b8;
+  --fg:        #e2e8f0;
+  --green:     #34d399;
+  --blue:      #60a5fa;
+  --purple:    #a78bfa;
+  --red:       #f87171;
+  /* colores semánticos extra */
+  --danger-bg:    #450a0a;
+  --danger-border:#7f1d1d;
+  --info-bg:      #172554;
+  --info-border:  #1e3a8a;
+  --success-bg:   #052e16;
+  --success-border:#14532d;
+}
+
+
 html, body {
   height: 100%;
   overflow: hidden;
@@ -305,7 +329,7 @@ body {
 }
 
 .logout-btn:hover {
-  background: #fee2e2;
+  background: var(--danger-bg, #fee2e2);
   border-color: var(--red);
   color: var(--red);
   box-shadow: 0 0 0 3px rgba(239,68,68,0.1);
@@ -713,7 +737,7 @@ body {
 }
 
 .icon-btn:hover { background: var(--border); color: var(--fg); border-color: var(--border); }
-.icon-btn.danger:hover { background: #fee2e2; color: var(--red); border-color: #fecaca; }
+.icon-btn.danger:hover { background: var(--danger-bg, #fee2e2); color: var(--red); border-color: var(--danger-border, #fecaca); }
 
 /* ===== CART ITEMS ===== */
 .drawer-items {
@@ -819,7 +843,7 @@ body {
   flex-shrink: 0;
 }
 
-.ci-remove:hover { color: var(--red); background: #fee2e2; }
+.ci-remove:hover { color: var(--red); background: var(--danger-bg, #fee2e2); }
 
 /* ===== DRAWER FOOTER ===== */
 .drawer-footer {
@@ -964,7 +988,7 @@ body {
   transition: background 0.15s;
 }
 
-.clear-btn:hover { background: #fee2e2; }
+.clear-btn:hover { background: var(--danger-bg, #fee2e2); }
 .clear-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* ===== CALCULADORA DE VUELTO ===== */
@@ -1096,7 +1120,7 @@ body {
 }
 
 .cambio-quick-btn:hover {
-  background: #eff6ff;
+  background: var(--info-bg, #eff6ff);
   border-color: var(--primary);
   color: var(--primary);
 }
@@ -1631,9 +1655,9 @@ body {
   font-weight: 700;
 }
 
-.badge-efectivo { background: #d1fae5; color: #065f46; }
-.badge-debito   { background: #dbeafe; color: #1e40af; }
-.badge-credito  { background: #ede9fe; color: #5b21b6; }
+.badge-efectivo { background: var(--success-border, #d1fae5); color: #065f46; }
+.badge-debito   { background: var(--info-bg, #dbeafe); color: var(--primary, #1e40af); }
+.badge-credito  { background: var(--info-bg, #ede9fe); color: #5b21b6; }
 
 .report-loading {
   display: flex;
@@ -1678,7 +1702,7 @@ body {
   transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
 }
 
-.backup-btn:hover { background: #ecfdf5; border-color: var(--green); color: var(--green); }
+.backup-btn:hover { background: var(--success-bg, #ecfdf5); border-color: var(--green); color: var(--green); }
 .backup-btn:active { transform: scale(0.97); }
 .backup-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .backup-btn.loading svg.icon-backup { display: none; }
@@ -1849,7 +1873,7 @@ body {
 
 .cat-option:checked + .cat-label {
   border-color: var(--primary);
-  background: #eff6ff;
+  background: var(--info-bg, #eff6ff);
   color: var(--primary);
 }
 
@@ -1922,4 +1946,4 @@ body {
   flex-shrink: 0;
 }
 
-.modal-delete-btn:hover { background: #fee2e2; }
+.modal-delete-btn:hover { background: var(--danger-bg, #fee2e2); }

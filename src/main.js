@@ -149,6 +149,7 @@ async function doLogin() {
     usuarioActual = usuario;
     await initMesas();
     iniciarRealtimeMesas();
+    await loadUserPreferences();
     showMesasScreen();
     cargarProductosSupabase();
     // No quitamos loading: la pantalla cambia y el botón desaparece
@@ -1382,6 +1383,7 @@ function adminMenuAction(accion) {
   if (accion === "producto") openAdminProd();
   if (accion === "gastos")   openGastos();
   if (accion === "reporte-gastos") openGastosReport();
+  if (accion === "configuracion")  openConfig();
 }
 
 // Cerrar el menú si se hace clic fuera
@@ -1755,6 +1757,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("loginPass").addEventListener("keydown", e => {
     if (e.key === "Enter") doLogin();
   });
+  document.getElementById("darkModeToggle")?.addEventListener("change", function() {
+    toggleDarkMode(this.checked);
+  });
   document.getElementById("nombreModalInput")?.addEventListener("keydown", e => {
     if (e.key === "Enter")  guardarNombreMesa();
     if (e.key === "Escape") cerrarNombreModal();
@@ -1770,6 +1775,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (logged) {
     await initMesas();
     iniciarRealtimeMesas();
+    await loadUserPreferences();
     showMesasScreen();
     cargarProductosSupabase();
   } else {
@@ -2185,6 +2191,8 @@ document.addEventListener("DOMContentLoaded", () => {
       case "cargarGastos":           cargarGastos();               break;
       case "aplicarFiltroGastos":    aplicarFiltroGastos();        break;
       case "setQuickFilterGastos":   setQuickFilterGastos(qf, el); break;
+      // Configuración
+      case "closeConfig":            closeConfig();                break;
     }
   });
 
@@ -2546,6 +2554,8 @@ function getActiveLayer() {
     return "gastos";
   if (document.getElementById("reportPanel")?.classList.contains("open"))
     return "report";
+  if (document.getElementById("configPanel")?.classList.contains("open"))
+    return "config";
   if (document.getElementById("drawer")?.classList.contains("open"))
     return "drawer";
 
@@ -2568,6 +2578,7 @@ function navigateBack() {
     case "gastosReport":  closeGastosReport();  break;
     case "gastos":        closeGastos();        break;
     case "report":        closeReport();        break;
+    case "config":        closeConfig();        break;
     case "drawer":        closeDrawer();        break;
     case "pos":           volverAMesas();       break;
     default:
@@ -2596,3 +2607,57 @@ window.addEventListener("load", () => {
   history.replaceState({ pwaNav: true, root: true }, "");
   pushNavState();
 });
+
+/* ═══════════════════════════════════════════════════════════════
+   CONFIGURACIÓN
+═══════════════════════════════════════════════════════════════ */
+
+// ── Panel Configuración ────────────────────────────────────────
+function openConfig() {
+  // Sincronizar toggle con el estado actual
+  const toggle = document.getElementById("darkModeToggle");
+  if (toggle) toggle.checked = document.documentElement.getAttribute("data-theme") === "dark";
+  document.getElementById("configPanel").classList.add("open");
+  if (typeof pushNavState === "function") pushNavState();
+}
+
+function closeConfig() {
+  document.getElementById("configPanel").classList.remove("open");
+}
+
+// ── Modo oscuro ────────────────────────────────────────────────
+async function toggleDarkMode(enabled) {
+  applyTheme(enabled);
+  await saveUserPreference("dark_mode", enabled);
+}
+
+function applyTheme(dark) {
+  document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+  // Actualizar theme-color del meta para la barra de estado Android
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = dark ? "#1e293b" : "#1d4ed8";
+}
+
+async function saveUserPreference(key, value) {
+  if (!usuarioActual?.id) return;
+  try {
+    await window.supabase_res
+      .from("usuarios")
+      .update({ preferencias: { ...(usuarioActual.preferencias || {}), [key]: value } })
+      .eq("id", usuarioActual.id);
+    // Actualizar objeto local también
+    if (!usuarioActual.preferencias) usuarioActual.preferencias = {};
+    usuarioActual.preferencias[key] = value;
+  } catch(e) {
+    console.error("Error guardando preferencia:", e);
+  }
+}
+
+async function loadUserPreferences() {
+  if (!usuarioActual?.preferencias) return;
+  const prefs = usuarioActual.preferencias;
+  if (typeof prefs.dark_mode === "boolean") {
+    applyTheme(prefs.dark_mode);
+  }
+}
+
