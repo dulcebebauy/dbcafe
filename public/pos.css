@@ -1224,6 +1224,7 @@ body {
 
 .toast.success { background: #10b981; }
 .toast.error   { background: #ef4444; }
+.toast.info    { background: #3b82f6; }
 
 @keyframes toastIn {
   from { opacity: 0; transform: translateY(-8px); }
