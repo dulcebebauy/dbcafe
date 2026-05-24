@@ -24,6 +24,7 @@ let editingProductId  = null;
 let mesaEditando      = null;
 let cambioMetodo      = "efectivo";
 let activeCatFilter   = "todos";
+let adminCatFilter    = "todos";
 
 Object.defineProperty(window, "carrito", {
   get() { return mesaSeleccionada ? mesaSeleccionada.carrito : []; },
@@ -119,32 +120,43 @@ async function doLogin() {
   const email    = document.getElementById("loginUser").value.trim();
   const password = document.getElementById("loginPass").value;
   const errorEl  = document.getElementById("loginError");
+  const btn      = document.getElementById("loginBtn");
   errorEl.textContent = "";
 
   if (!email)    { errorEl.textContent = "Ingresá el email"; return; }
   if (!password) { errorEl.textContent = "Ingresá la contraseña"; return; }
 
-  const { data, error } = await window.supabase_res.auth.signInWithPassword({ email, password });
+  btn.classList.add("loading");
 
-  if (error) {
-    errorEl.textContent = "Credenciales inválidas";
-    return;
+  try {
+    const { data, error } = await window.supabase_res.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      errorEl.textContent = "Credenciales inválidas";
+      btn.classList.remove("loading");
+      return;
+    }
+
+    const { data: usuario, error: errorUsuario } = await window.supabase_res
+      .from("usuarios")
+      .select("*")
+      .eq("auth_user_id", data.user.id)
+      .single();
+
+    if (errorUsuario || !usuario) { errorEl.textContent = "Usuario sin permisos"; btn.classList.remove("loading"); return; }
+    if (!usuario.activo)          { errorEl.textContent = "Usuario inactivo";      btn.classList.remove("loading"); return; }
+
+    usuarioActual = usuario;
+    await initMesas();
+    iniciarRealtimeMesas();
+    await loadUserPreferences();
+    showMesasScreen();
+    cargarProductosSupabase();
+    // No quitamos loading: la pantalla cambia y el botón desaparece
+  } catch(e) {
+    errorEl.textContent = "Error de conexión";
+    btn.classList.remove("loading");
   }
-
-  const { data: usuario, error: errorUsuario } = await window.supabase_res
-    .from("usuarios")
-    .select("*")
-    .eq("auth_user_id", data.user.id)
-    .single();
-
-  if (errorUsuario || !usuario) { errorEl.textContent = "Usuario sin permisos"; return; }
-  if (!usuario.activo)          { errorEl.textContent = "Usuario inactivo"; return; }
-
-  usuarioActual = usuario;
-  await initMesas();
-  iniciarRealtimeMesas();
-  showMesasScreen();
-  cargarProductosSupabase();
 }
 
 async function doLogout() {
@@ -166,6 +178,7 @@ function showLogin() {
   document.getElementById("loginUser").value  = "";
   document.getElementById("loginPass").value  = "";
   document.getElementById("loginError").textContent = "";
+  document.getElementById("loginBtn")?.classList.remove("loading");
 }
 
 function showPOS() {
@@ -174,13 +187,21 @@ function showPOS() {
   posApp.style.display       = "flex";
   posApp.style.flexDirection = "column";
   posApp.style.height        = "100%";
+  if (typeof pushNavState === "function") pushNavState();
 }
 
 function showMesasScreen() {
   document.getElementById("usuarioHeader").textContent =
     usuarioActual?.username + " | " + usuarioActual?.rol || "";
 
-  document.getElementById("adminMenuWrap").style.display = esAdministrador() ? "block" : "none";
+  document.getElementById("adminMenuWrap").style.display = "block";
+  // Mostrar opciones de admin solo si es administrador
+  const adminOnlyItems = document.querySelectorAll(".admin-menu-item[data-arg]");
+  adminOnlyItems.forEach(el => {
+    el.style.display = esAdministrador() ? "" : "none";
+  });
+  const adminSep = document.querySelector(".admin-menu-separator");
+  if (adminSep) adminSep.style.display = esAdministrador() ? "" : "none";
 
   const stateEl = document.getElementById("stateCenter");
   stateEl.style.display = "flex";
@@ -234,6 +255,10 @@ async function cargarProductosSupabase() {
 
   applyFilters();
   localStorage.setItem("productos", JSON.stringify(productos));
+  // Si el panel de admin está abierto, refrescar su grilla
+  if (document.getElementById("adminProdPanel")?.classList.contains("open")) {
+    renderAdminProdGrid();
+  }
   return data || [];
 }
 
@@ -690,6 +715,7 @@ function openDrawer() {
   document.body.style.overflow = "hidden";
   renderCartItems();
   updateDrawerTotal();
+  if (typeof pushNavState === "function") pushNavState();
 }
 
 function closeDrawer() {
@@ -954,6 +980,7 @@ function clearSearch() {
 function openReport() {
   document.getElementById("reportPanel").classList.add("open");
   if (ventasCache.length === 0) cargarVentas();
+  if (typeof pushNavState === "function") pushNavState();
 }
 
 function closeReport() {
@@ -1241,6 +1268,7 @@ function openProductModal(producto) {
 
   document.getElementById("productModalOverlay").classList.add("open");
   setTimeout(() => document.getElementById("prodNombre").focus(), 320);
+  if (typeof pushNavState === "function") pushNavState();
 }
 
 function closeProductModal() {
@@ -1352,9 +1380,10 @@ function closeAdminMenu() {
 function adminMenuAction(accion) {
   closeAdminMenu();
   if (accion === "reporte")  openReport();
-  if (accion === "producto") openProductModal(null);
+  if (accion === "producto") openAdminProd();
   if (accion === "gastos")   openGastos();
   if (accion === "reporte-gastos") openGastosReport();
+  if (accion === "configuracion")  openConfig();
 }
 
 // Cerrar el menú si se hace clic fuera
@@ -1371,6 +1400,7 @@ let gastoParseado = null; // objeto JSON parseado listo para guardar
 function openGastos() {
   resetGastosPanel();
   document.getElementById("gastosPanel").classList.add("open");
+  if (typeof pushNavState === "function") pushNavState();
 }
 
 function closeGastos() {
@@ -1727,6 +1757,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("loginPass").addEventListener("keydown", e => {
     if (e.key === "Enter") doLogin();
   });
+  document.getElementById("darkModeToggle")?.addEventListener("change", function() {
+    toggleDarkMode(this.checked);
+  });
   document.getElementById("nombreModalInput")?.addEventListener("keydown", e => {
     if (e.key === "Enter")  guardarNombreMesa();
     if (e.key === "Escape") cerrarNombreModal();
@@ -1742,6 +1775,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (logged) {
     await initMesas();
     iniciarRealtimeMesas();
+    await loadUserPreferences();
     showMesasScreen();
     cargarProductosSupabase();
   } else {
@@ -1758,10 +1792,114 @@ let gastosRubroFiltro = "todos"; // rubro activo en el chip filter
 async function openGastosReport() {
   document.getElementById("gastosReportPanel").classList.add("open");
   await cargarGastos();
+  if (typeof pushNavState === "function") pushNavState();
 }
 
 function closeGastosReport() {
   document.getElementById("gastosReportPanel").classList.remove("open");
+}
+
+/* ═══════════════════════════════════════
+   ADMINISTRACIÓN DE PRODUCTOS
+═══════════════════════════════════════ */
+function openAdminProd() {
+  // Resetear filtros al abrir
+  adminCatFilter = "todos";
+  document.querySelectorAll("#adminCatFilterBar .cat-chip").forEach(c => c.classList.remove("active"));
+  const todosBtn = document.querySelector("#adminCatFilterBar .cat-chip[data-admin-cat='todos']");
+  if (todosBtn) todosBtn.classList.add("active");
+  const searchInput = document.getElementById("adminSearch");
+  if (searchInput) { searchInput.value = ""; }
+  const clearBtn = document.getElementById("adminSearchClear");
+  if (clearBtn) clearBtn.style.display = "none";
+
+  renderAdminProdGrid();
+  document.getElementById("adminProdPanel").classList.add("open");
+  if (typeof pushNavState === "function") pushNavState();
+}
+
+function setAdminCatFilter(cat, btn) {
+  adminCatFilter = cat;
+  document.querySelectorAll("#adminCatFilterBar .cat-chip").forEach(c => c.classList.remove("active"));
+  btn.classList.add("active");
+  renderAdminProdGrid();
+}
+
+function handleAdminSearch() {
+  const input = document.getElementById("adminSearch").value;
+  document.getElementById("adminSearchClear").style.display = input ? "block" : "none";
+  renderAdminProdGrid();
+}
+
+function clearAdminSearch() {
+  document.getElementById("adminSearch").value = "";
+  document.getElementById("adminSearchClear").style.display = "none";
+  renderAdminProdGrid();
+}
+
+
+function closeAdminProd() {
+  document.getElementById("adminProdPanel").classList.remove("open");
+}
+
+function renderAdminProdGrid() {
+  const grid = document.getElementById("adminProdGrid");
+  grid.innerHTML = "";
+
+  if (!productos || productos.length === 0) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:#94a3b8;padding:40px 0;font-size:14px;">No hay productos cargados</div>`;
+    return;
+  }
+
+  // Aplicar filtros
+  const searchTxt = normalizarTexto((document.getElementById("adminSearch")?.value) || "");
+  let lista = productos;
+  if (adminCatFilter !== "todos") lista = lista.filter(p => p.categoria === adminCatFilter);
+  if (searchTxt) lista = lista.filter(p => normalizarTexto(p.nombre).includes(searchTxt));
+
+  if (lista.length === 0) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:#94a3b8;padding:40px 0;font-size:14px;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 10px;display:block;opacity:.4"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      Sin resultados</div>`;
+    return;
+  }
+
+  lista.forEach(p => {
+    const emoji = getCategoryEmoji(p.categoria);
+    const card = document.createElement("div");
+    card.className = "admin-prod-card";
+    card.innerHTML = `
+      ${emoji ? `<div class="admin-prod-emoji">${emoji}</div>` : ""}
+      <div class="admin-prod-edit-hint">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      </div>
+      <div class="admin-prod-name">${capitalizarTexto(p.nombre)}</div>
+      <div class="admin-prod-bottom">
+        <span class="admin-prod-price">${fmt(p.precio)}</span>
+        ${p.mostrar_carta === false ? `<span class="admin-prod-badge">Oculto</span>` : ""}
+      </div>
+    `;
+
+    // Click directo abre el modal de edición
+    card.addEventListener("click", () => {
+      openProductModal(p);
+    });
+
+    // Long press también lo abre (consistencia con el POS)
+    let lpTimer = null;
+    let didLP = false;
+    const startLP = () => { didLP = false; lpTimer = setTimeout(() => { didLP = true; navigator.vibrate?.(50); openProductModal(p); }, 580); };
+    const cancelLP = () => { clearTimeout(lpTimer); };
+    card.addEventListener("touchstart",  startLP, { passive: true });
+    card.addEventListener("touchend",    cancelLP);
+    card.addEventListener("touchmove",   cancelLP);
+    card.addEventListener("touchcancel", cancelLP);
+    card.addEventListener("mousedown",   e => { if (e.button === 0) startLP(); });
+    card.addEventListener("mouseup",     cancelLP);
+    card.addEventListener("mouseleave",  cancelLP);
+
+    grid.appendChild(card);
+  });
 }
 
 async function cargarGastos() {
@@ -2046,9 +2184,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Reporte gastos
       case "closeGastosReport":      closeGastosReport();          break;
+      case "closeAdminProd":         closeAdminProd();             break;
+      case "openAddProductoAdmin":   openProductModal(null);       break;
+      case "setAdminCatFilter":      setAdminCatFilter(el.dataset.adminCat, el); break;
+      case "clearAdminSearch":       clearAdminSearch();           break;
       case "cargarGastos":           cargarGastos();               break;
       case "aplicarFiltroGastos":    aplicarFiltroGastos();        break;
       case "setQuickFilterGastos":   setQuickFilterGastos(qf, el); break;
+      // Configuración
+      case "closeConfig":            closeConfig();                break;
     }
   });
 
@@ -2059,6 +2203,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     switch (el.dataset.oninput) {
       case "handleSearch":       handleSearch();       break;
+      case "handleAdminSearch":  handleAdminSearch();  break;
       case "updateDrawerTotal":  updateDrawerTotal();  break;
       case "calcularCambio":     calcularCambio();     break;
       case "onGastosJsonInput":  onGastosJsonInput();  break;
@@ -2202,13 +2347,20 @@ function gmAgregarLinea() {
   row.className = "gm-producto-row";
   row.dataset.lineaId = id;
   row.innerHTML = `
-    <input class="gm-input" type="text"   placeholder="Descripción"  data-gm-field="descripcion" data-gm-id="${id}">
-    <select class="gm-input gasto-rubro-select" data-gm-field="rubro" data-gm-id="${id}">${rubroOpts}</select>
-    <input class="gm-input" type="number" placeholder="1"  min="0.01" step="any" value="1"  data-gm-field="cantidad" data-gm-id="${id}">
-    <input class="gm-input" type="number" placeholder="0"  min="0"    step="any" value=""   data-gm-field="costo"    data-gm-id="${id}">
-    <button class="gm-remove-btn" data-gm-remove="${id}" title="Eliminar línea">
-      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-    </button>
+    <div class="gm-producto-row-top">
+      <input class="gm-input" type="text" placeholder="Descripción del producto" data-gm-field="descripcion" data-gm-id="${id}" autocomplete="off">
+      <button class="gm-remove-btn" data-gm-remove="${id}" title="Eliminar línea">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+    <div class="gm-producto-row-bottom">
+      <select class="gm-input gasto-rubro-select" data-gm-field="rubro" data-gm-id="${id}">${rubroOpts}</select>
+      <input class="gm-input" type="number" placeholder="Cant." min="0.01" step="any" value="1" data-gm-field="cantidad" data-gm-id="${id}">
+      <div class="gm-costo-wrap">
+        <span class="gm-costo-prefix">$</span>
+        <input class="gm-input" type="number" placeholder="0" min="0" step="any" value="" data-gm-field="costo" data-gm-id="${id}">
+      </div>
+    </div>
   `;
   document.getElementById("gmProductosContainer").appendChild(row);
 }
@@ -2371,3 +2523,141 @@ async function guardarGastoManual() {
     btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Guardar gasto`;
   }
 }
+
+
+/* ═══════════════════════════════════════════════════════════════
+   NAVEGACIÓN NATIVA - BOTÓN ATRÁS (Android / PWA)
+   ─────────────────────────────────────────────────────────────
+   Estrategia: history.pushState al abrir cada pantalla/panel.
+   El evento "popstate" (botón atrás físico) cierra la capa
+   superior. Doble toque en pantalla raíz → cierra la app.
+
+   Jerarquía de capas (más interna → más externa):
+     productModal > adminProd > gastosReport > gastos >
+     report > drawer > pos > mesas > login
+═══════════════════════════════════════════════════════════════ */
+
+// ── Función pública usada por los openers ──────────────────────
+function pushNavState() {
+  history.pushState({ pwaNav: true }, "");
+}
+
+// ── Qué capa está activa ───────────────────────────────────────
+function getActiveLayer() {
+  if (document.getElementById("productModalOverlay")?.classList.contains("open"))
+    return "productModal";
+  if (document.getElementById("adminProdPanel")?.classList.contains("open"))
+    return "adminProd";
+  if (document.getElementById("gastosReportPanel")?.classList.contains("open"))
+    return "gastosReport";
+  if (document.getElementById("gastosPanel")?.classList.contains("open"))
+    return "gastos";
+  if (document.getElementById("reportPanel")?.classList.contains("open"))
+    return "report";
+  if (document.getElementById("configPanel")?.classList.contains("open"))
+    return "config";
+  if (document.getElementById("drawer")?.classList.contains("open"))
+    return "drawer";
+
+  const pos   = document.getElementById("posApp");
+  const mesas = document.getElementById("mesasScreen");
+
+  if (pos   && pos.style.display   !== "none" && pos.style.display   !== "")  return "pos";
+  if (mesas && mesas.style.display !== "none" && mesas.style.display !== "")  return "mesas";
+  return "login";
+}
+
+// ── Navegación hacia atrás ─────────────────────────────────────
+let _lastBackPress = 0;
+const _EXIT_DELAY  = 2000;
+
+function navigateBack() {
+  switch (getActiveLayer()) {
+    case "productModal":  closeProductModal();  break;
+    case "adminProd":     closeAdminProd();     break;
+    case "gastosReport":  closeGastosReport();  break;
+    case "gastos":        closeGastos();        break;
+    case "report":        closeReport();        break;
+    case "config":        closeConfig();        break;
+    case "drawer":        closeDrawer();        break;
+    case "pos":           volverAMesas();       break;
+    default:
+      // Estamos en mesas o login → doble toque para salir
+      if (Date.now() - _lastBackPress < _EXIT_DELAY) {
+        try { window.close(); } catch (_) {}
+        navigator.app?.exitApp?.();
+      } else {
+        _lastBackPress = Date.now();
+        showToast("Presioná atrás de nuevo para salir", "info");
+      }
+  }
+}
+
+// ── Listener del botón atrás ───────────────────────────────────
+window.addEventListener("popstate", () => {
+  navigateBack();
+  // Mantener centinela si aún hay capas abiertas
+  if (!["login", "mesas"].includes(getActiveLayer())) {
+    pushNavState();
+  }
+});
+
+// ── Semilla inicial del history ────────────────────────────────
+window.addEventListener("load", () => {
+  history.replaceState({ pwaNav: true, root: true }, "");
+  pushNavState();
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   CONFIGURACIÓN
+═══════════════════════════════════════════════════════════════ */
+
+// ── Panel Configuración ────────────────────────────────────────
+function openConfig() {
+  // Sincronizar toggle con el estado actual
+  const toggle = document.getElementById("darkModeToggle");
+  if (toggle) toggle.checked = document.documentElement.getAttribute("data-theme") === "dark";
+  document.getElementById("configPanel").classList.add("open");
+  if (typeof pushNavState === "function") pushNavState();
+}
+
+function closeConfig() {
+  document.getElementById("configPanel").classList.remove("open");
+}
+
+// ── Modo oscuro ────────────────────────────────────────────────
+async function toggleDarkMode(enabled) {
+  applyTheme(enabled);
+  await saveUserPreference("dark_mode", enabled);
+}
+
+function applyTheme(dark) {
+  document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+  // Actualizar theme-color del meta para la barra de estado Android
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = dark ? "#1e293b" : "#1d4ed8";
+}
+
+async function saveUserPreference(key, value) {
+  if (!usuarioActual?.id) return;
+  try {
+    await window.supabase_res
+      .from("usuarios")
+      .update({ preferencias: { ...(usuarioActual.preferencias || {}), [key]: value } })
+      .eq("id", usuarioActual.id);
+    // Actualizar objeto local también
+    if (!usuarioActual.preferencias) usuarioActual.preferencias = {};
+    usuarioActual.preferencias[key] = value;
+  } catch(e) {
+    console.error("Error guardando preferencia:", e);
+  }
+}
+
+async function loadUserPreferences() {
+  if (!usuarioActual?.preferencias) return;
+  const prefs = usuarioActual.preferencias;
+  if (typeof prefs.dark_mode === "boolean") {
+    applyTheme(prefs.dark_mode);
+  }
+}
+

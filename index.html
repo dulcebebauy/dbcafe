@@ -18,9 +18,9 @@
 <link rel="stylesheet" href="reporte_gastos.css">
 <style>
 .mesa-card {
-  background: #fff;
+  background: var(--surface, #fff);
   border-radius: 16px;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--border, #e2e8f0);
   padding: 18px 12px 14px;
   display: flex;
   flex-direction: column;
@@ -32,28 +32,28 @@
 }
 .mesa-card:active { transform: scale(.95); }
 .mesa-card:hover  { box-shadow: 0 4px 18px rgba(0,0,0,.1); border-color: #cbd5e1; }
-.mesa-card.ocupada { border-color: #1d4ed8; background: #eff6ff; }
-.mesa-card.ocupada .mesa-status { color: #1d4ed8; }
+.mesa-card.ocupada { border-color: var(--primary, #1d4ed8); background: var(--info-bg, #eff6ff); }
+.mesa-card.ocupada .mesa-status { color: var(--primary, #1d4ed8); }
 .mesa-num {
   font-size: 11px;
   font-weight: 500;
-  color: #94a3b8;
+  color: var(--muted-fg, #94a3b8);
   letter-spacing: .3px;
 }
 .mesa-icon { font-size: 30px; line-height: 1; }
-.mesa-status { font-size: 15px; font-weight: 700; color: #0f172a; }
+.mesa-status { font-size: 15px; font-weight: 700; color: var(--fg, #0f172a); }
 .mesa-items {
   font-size: 11px;
-  color: #64748b;
+  color: var(--muted-fg, #64748b);
   font-weight: 500;
-  background: #f1f5f9;
+  background: var(--bg, #f1f5f9);
   border-radius: 6px;
   padding: 2px 8px;
 }
 .mesa-nombre {
   font-size: 14px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--fg, #0f172a);
   text-align: center;
   max-width: 120px;
   overflow: hidden;
@@ -73,7 +73,7 @@
 }
 .nombre-modal-overlay.open { display: flex; }
 .nombre-modal {
-  background: #fff;
+  background: var(--surface, #fff);
   border-radius: 18px;
   padding: 24px 20px 18px;
   width: min(320px, 90vw);
@@ -82,11 +82,11 @@
   flex-direction: column;
   gap: 14px;
 }
-.nombre-modal-title { font-size: 16px; font-weight: 700; color: #0f172a; }
+.nombre-modal-title { font-size: 16px; font-weight: 700; color: var(--fg, #0f172a); }
 .nombre-modal input {
   width: 100%;
   padding: 10px 12px;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--border, #e2e8f0);
   border-radius: 10px;
   font-size: 15px;
   font-family: inherit;
@@ -94,7 +94,7 @@
   box-sizing: border-box;
   transition: border-color .15s;
 }
-.nombre-modal input:focus { border-color: #1d4ed8; }
+.nombre-modal input:focus { border-color: var(--primary, #1d4ed8); }
 .nombre-modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
 .nombre-modal-btns button {
   padding: 8px 18px;
@@ -105,7 +105,7 @@
   cursor: pointer;
   font-family: inherit;
 }
-.btn-cancelar-nombre { background: #f1f5f9; color: #64748b; }
+.btn-cancelar-nombre { background: var(--bg, #f1f5f9); color: var(--muted-fg, #64748b); }
 .btn-guardar-nombre  { background: #1d4ed8; color: #fff; }
 
 #usuarioHeader {
@@ -144,25 +144,25 @@
   height: 20px;
   left: 3px;
   top: 3px;
-  background: #fff;
+  background: var(--surface, #fff);
   border-radius: 50%;
   transition: transform .2s;
   box-shadow: 0 1px 4px rgba(0,0,0,.2);
 }
 .toggle-switch input:checked + .toggle-slider { background: #1d4ed8; }
 .toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
-.toggle-label-text { font-size: 14px; font-weight: 600; color: #0f172a; }
-.toggle-on-text  { color: #1d4ed8; }
-.toggle-off-text { color: #94a3b8; }
-.toggle-hint { font-size: 12px; color: #94a3b8; margin: 6px 0 0 0; line-height: 1.4; }
+.toggle-label-text { font-size: 14px; font-weight: 600; color: var(--fg, #0f172a); }
+.toggle-on-text  { color: var(--primary, #1d4ed8); }
+.toggle-off-text { color: var(--muted-fg, #94a3b8); }
+.toggle-hint { font-size: 12px; color: var(--muted-fg, #94a3b8); margin: 6px 0 0 0; line-height: 1.4; }
 
 /* ── Menú administrador ── */
 .admin-dropdown {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  background: #fff;
-  border: 1.5px solid #e2e8f0;
+  background: var(--surface, #fff);
+  border: 1.5px solid var(--border, #e2e8f0);
   border-radius: 14px;
   box-shadow: 0 8px 32px rgba(0,0,0,.13);
   min-width: 190px;
@@ -185,22 +185,143 @@
   font-family: inherit;
   font-size: 14px;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--fg, #0f172a);
   cursor: pointer;
   text-align: left;
   transition: background .12s;
 }
-.admin-menu-item:hover { background: #f1f5f9; }
+.admin-menu-item:hover { background: var(--bg, #f1f5f9); }
 .admin-menu-item + .admin-menu-item {
   border-top: 1px solid #f1f5f9;
 }
 .admin-menu-item svg { color: #1d4ed8; flex-shrink: 0; }
 
+/* Separador en menú admin */
+.admin-menu-separator {
+  height: 1px;
+  background: #e2e8f0;
+  margin: 4px 0;
+}
+
+/* Botón Salir en menú admin */
+.admin-menu-logout {
+  color: #ef4444;
+}
+.admin-menu-logout svg { color: #ef4444; }
+.admin-menu-logout:hover { background: var(--danger-bg, #fef2f2) !important; }
+
+/* ── UNIFICACIÓN DE BOTONES ── */
+/* Botón primario (acción principal) */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 44px;
+  padding: 0 18px;
+  background: #1d4ed8;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: filter .15s, transform .1s, opacity .2s;
+  white-space: nowrap;
+}
+.btn-primary:hover:not(:disabled) { filter: brightness(1.1); }
+.btn-primary:active { transform: scale(0.97); }
+.btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+
+/* Botón secundario (cancelar / neutro) */
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 44px;
+  padding: 0 18px;
+  background: var(--bg, #f1f5f9);
+  color: #334155;
+  border: 1.5px solid var(--border, #e2e8f0);
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+  white-space: nowrap;
+}
+.btn-secondary:hover:not(:disabled) { background: #e2e8f0; border-color: #cbd5e1; }
+.btn-secondary:active { transform: scale(0.97); }
+.btn-secondary:disabled { opacity: .5; cursor: not-allowed; }
+
+/* Botón de éxito (guardar / confirmar) */
+.btn-success {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 44px;
+  padding: 0 18px;
+  background: #16a34a;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: filter .15s, transform .1s, opacity .2s;
+  white-space: nowrap;
+}
+.btn-success:hover:not(:disabled) { filter: brightness(1.08); }
+.btn-success:active { transform: scale(0.97); }
+.btn-success:disabled { opacity: .5; cursor: not-allowed; }
+
+/* Botón de peligro (eliminar / cerrar sesión) */
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 44px;
+  padding: 0 18px;
+  background: none;
+  color: #ef4444;
+  border: 1.5px solid #ef4444;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .15s;
+  white-space: nowrap;
+}
+.btn-danger:hover:not(:disabled) { background: var(--danger-bg, #fef2f2); }
+.btn-danger:active { transform: scale(0.97); }
+.btn-danger:disabled { opacity: .5; cursor: not-allowed; }
+
+/* Alias full-width para botones de confirmación */
+.btn-primary.btn-full,
+.btn-secondary.btn-full,
+.btn-success.btn-full,
+.btn-danger.btn-full {
+  width: 100%;
+  height: 50px;
+  font-size: 15px;
+  border-radius: 14px;
+}
+
+/* ── RESPONSIVE: Tabla de productos en Cargar gasto ── */
+
+
 /* ── Panel Gastos ── */
 .gastos-panel {
   position: fixed;
   inset: 0;
-  background: #f8fafc;
+  background: var(--muted, #f8fafc);
   z-index: 300;
   display: flex;
   flex-direction: column;
@@ -209,8 +330,8 @@
 }
 .gastos-panel.open { transform: translateX(0); }
 .gastos-header {
-  background: #fff;
-  border-bottom: 1.5px solid #e2e8f0;
+  background: var(--surface, #fff);
+  border-bottom: 1.5px solid var(--border, #e2e8f0);
   padding: 0 16px;
   display: flex;
   flex-direction: column;
@@ -222,7 +343,7 @@
   gap: 10px;
   padding: 14px 0 10px;
 }
-.gastos-header-title { font-size: 18px; font-weight: 800; color: #0f172a; flex: 1; }
+.gastos-header-title { font-size: 18px; font-weight: 800; color: var(--fg, #0f172a); flex: 1; }
 .gastos-tabs {
   display: flex;
   margin: 0 -16px;
@@ -232,7 +353,7 @@
   padding: 10px 18px;
   font-size: 13px;
   font-weight: 600;
-  color: #94a3b8;
+  color: var(--muted-fg, #94a3b8);
   border: none;
   background: none;
   cursor: pointer;
@@ -240,7 +361,7 @@
   font-family: inherit;
   transition: color .15s, border-color .15s;
 }
-.gastos-tab.active      { color: #1d4ed8; border-bottom-color: #1d4ed8; }
+.gastos-tab.active      { color: var(--primary, #1d4ed8); border-bottom-color: var(--primary, #1d4ed8); }
 .gastos-tab:disabled    { opacity: .45; cursor: not-allowed; }
 .gastos-body {
   flex: 1;
@@ -254,19 +375,19 @@
   width: 100%;
   min-height: 180px;
   padding: 12px;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--border, #e2e8f0);
   border-radius: 12px;
   font-family: 'JetBrains Mono', monospace;
   font-size: 12px;
   color: #334155;
-  background: #fff;
+  background: var(--surface, #fff);
   resize: vertical;
   outline: none;
   box-sizing: border-box;
   transition: border-color .15s;
   line-height: 1.55;
 }
-.gastos-json-area:focus { border-color: #1d4ed8; }
+.gastos-json-area:focus { border-color: var(--primary, #1d4ed8); }
 .gastos-json-area.error { border-color: #ef4444; }
 .gastos-json-area.valid { border-color: #22c55e; }
 .gastos-parse-btn {
@@ -288,24 +409,24 @@
 .gastos-parse-btn:hover    { background: #1e40af; }
 .gastos-parse-btn:disabled { opacity: .5; cursor: not-allowed; }
 .gasto-preview-card {
-  background: #fff;
-  border: 1.5px solid #e2e8f0;
+  background: var(--surface, #fff);
+  border: 1.5px solid var(--border, #e2e8f0);
   border-radius: 16px;
   overflow: hidden;
 }
 .gasto-preview-head {
-  background: #eff6ff;
-  border-bottom: 1px solid #dbeafe;
+  background: var(--info-bg, #eff6ff);
+  border-bottom: 1px solid var(--info-border, #dbeafe);
   padding: 14px 16px;
 }
-.gasto-preview-empresa { font-size: 14px; font-weight: 800; color: #1e40af; }
-.gasto-preview-meta    { font-size: 12px; color: #64748b; margin-top: 3px; }
-.gasto-preview-section { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; }
+.gasto-preview-empresa { font-size: 14px; font-weight: 800; color: var(--primary, #1e40af); }
+.gasto-preview-meta    { font-size: 12px; color: var(--muted-fg, #64748b); margin-top: 3px; }
+.gasto-preview-section { padding: 14px 16px; border-bottom: 1px solid var(--border, #f1f5f9); }
 .gasto-preview-section:last-child { border-bottom: none; }
 .gasto-preview-section-title {
   font-size: 11px;
   font-weight: 700;
-  color: #94a3b8;
+  color: var(--muted-fg, #94a3b8);
   text-transform: uppercase;
   letter-spacing: .6px;
   margin-bottom: 10px;
@@ -321,25 +442,25 @@
 }
 .gasto-item-row:last-child  { border-bottom: none; }
 .gasto-item-desc            { color: #334155; font-weight: 500; flex: 1; }
-.gasto-item-qty             { color: #94a3b8; font-size: 11px; white-space: nowrap; }
-.gasto-item-price           { color: #0f172a; font-weight: 700; white-space: nowrap; }
+.gasto-item-qty             { color: var(--muted-fg, #94a3b8); font-size: 11px; white-space: nowrap; }
+.gasto-item-price           { color: var(--fg, #0f172a); font-weight: 700; white-space: nowrap; }
 .gasto-rubro-badge {
   display: inline-block;
   font-size: 10px;
   font-weight: 600;
   padding: 1px 7px;
   border-radius: 20px;
-  background: #f1f5f9;
-  color: #64748b;
+  background: var(--bg, #f1f5f9);
+  color: var(--muted-fg, #64748b);
   margin-left: 6px;
 }
 .gasto-rubro-select {
   font-size: 11px;
   font-weight: 600;
   font-family: inherit;
-  color: #64748b;
-  background: #f1f5f9;
-  border: 1.5px solid #e2e8f0;
+  color: var(--muted-fg, #64748b);
+  background: var(--bg, #f1f5f9);
+  border: 1.5px solid var(--border, #e2e8f0);
   border-radius: 20px;
   padding: 2px 22px 2px 8px;
   margin-left: 6px;
@@ -353,22 +474,22 @@
   transition: border-color .15s, color .15s;
   max-width: 130px;
 }
-.gasto-rubro-select:focus { border-color: #1d4ed8; color: #1d4ed8; }
-.gasto-rubro-select.asignado { background-color: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+.gasto-rubro-select:focus { border-color: var(--primary, #1d4ed8); color: var(--primary, #1d4ed8); }
+.gasto-rubro-select.asignado { background-color: var(--info-bg, #eff6ff); border-color: var(--info-border, #bfdbfe); color: var(--primary, #1d4ed8); }
 .gasto-total-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-size: 16px;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--fg, #0f172a);
 }
-.gasto-total-row span:last-child { color: #1d4ed8; }
+.gasto-total-row span:last-child { color: var(--primary, #1d4ed8); }
 .gasto-pago-row {
   display: flex;
   justify-content: space-between;
   font-size: 13px;
-  color: #64748b;
+  color: var(--muted-fg, #64748b);
   padding: 3px 0;
 }
 .gastos-confirm-btn {
@@ -391,8 +512,8 @@
 .gastos-confirm-btn:hover    { background: #15803d; }
 .gastos-confirm-btn:disabled { opacity: .5; cursor: not-allowed; }
 .gastos-error-msg {
-  background: #fef2f2;
-  border: 1.5px solid #fecaca;
+  background: var(--danger-bg, #fef2f2);
+  border: 1.5px solid var(--danger-border, #fecaca);
   border-radius: 10px;
   padding: 10px 14px;
   font-size: 13px;
@@ -414,56 +535,314 @@
 
 /* ── Formulario manual de gastos ── */
 .gm-field { display: flex; flex-direction: column; gap: 5px; }
-.gm-label { font-size: 12px; font-weight: 600; color: #64748b; letter-spacing: .3px; text-transform: uppercase; }
+.gm-label { font-size: 12px; font-weight: 600; color: var(--muted-fg, #64748b); letter-spacing: .3px; text-transform: uppercase; }
 .gm-input {
-  width: 100%; padding: 10px 12px; border: 1.5px solid #e2e8f0; border-radius: 10px;
+  width: 100%; padding: 10px 12px; border: 1.5px solid var(--border, #e2e8f0); border-radius: 10px;
   font-size: 14px; font-family: inherit; outline: none; box-sizing: border-box;
-  transition: border-color .15s; background: #fff; color: #0f172a;
+  transition: border-color .15s; background: var(--surface, #fff); color: var(--fg, #0f172a);
 }
-.gm-input:focus { border-color: #1d4ed8; }
+.gm-input:focus { border-color: var(--primary, #1d4ed8); }
 .gm-input.error { border-color: #ef4444; }
 .gm-row { display: flex; gap: 10px; }
 .gm-row .gm-field { flex: 1; min-width: 0; }
 .gm-section-title {
-  font-size: 11px; font-weight: 700; color: #94a3b8; letter-spacing: .5px;
+  font-size: 11px; font-weight: 700; color: var(--muted-fg, #94a3b8); letter-spacing: .5px;
   text-transform: uppercase; padding: 4px 0 2px; border-top: 1px solid #f1f5f9; margin-top: 4px;
 }
 .gm-producto-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--info-bg, #f8faff);
+  border: 1.5px solid var(--border, #e2e8f0);
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 8px;
+  transition: border-color .15s;
+}
+.gm-producto-row:focus-within { border-color: var(--primary, #93c5fd); }
+.gm-producto-row-top {
   display: grid;
-  grid-template-columns: 1fr 110px 90px 100px 32px;
-  gap: 6px; align-items: end;
+  grid-template-columns: 1fr auto;
+  gap: 6px;
+  align-items: center;
 }
-.gm-producto-row .gm-input { font-size: 13px; padding: 8px 10px; }
+.gm-producto-row-bottom {
+  display: grid;
+  grid-template-columns: 1fr 80px 110px;
+  gap: 6px;
+  align-items: center;
+}
+.gm-costo-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.gm-costo-prefix {
+  position: absolute;
+  left: 11px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted-fg, #64748b);
+  pointer-events: none;
+  user-select: none;
+  z-index: 1;
+}
+.gm-costo-wrap .gm-input { padding-left: 26px; font-weight: 600; color: var(--primary, #1d4ed8); }
+.gm-row-inline { display: none; }
+.gm-producto-row .gm-input { font-size: 13px; padding: 8px 10px; background: var(--surface, #fff); }
+.gm-producto-row .gm-input[data-gm-field="descripcion"] { font-size: 14px; font-weight: 500; }
+.gm-col-header { display: none; }
 .gm-remove-btn {
-  width: 32px; height: 36px; border: none; background: #fef2f2; border-radius: 8px;
-  color: #ef4444; cursor: pointer; display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0; transition: background .15s;
+  width: 36px; height: 36px; border: 1.5px solid var(--danger-border, #fecaca); background: var(--danger-bg, #fef2f2); border-radius: 10px;
+  color: var(--red, #ef4444); cursor: pointer; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: background .15s, border-color .15s;
 }
-.gm-remove-btn:hover { background: #fee2e2; }
+.gm-remove-btn:hover { background: #fee2e2; border-color: #ef4444; }
 .gm-add-line-btn {
-  display: flex; align-items: center; gap: 6px; padding: 8px 14px; border: 1.5px dashed #bfdbfe;
-  border-radius: 10px; background: #f8faff; color: #1d4ed8; font-size: 13px; font-weight: 600;
+  display: flex; align-items: center; gap: 6px; padding: 8px 14px; border: 1.5px dashed var(--info-border, #bfdbfe);
+  border-radius: 10px; background: var(--info-bg, #f8faff); color: var(--primary, #1d4ed8); font-size: 13px; font-weight: 600;
   cursor: pointer; width: 100%; justify-content: center; transition: background .15s;
 }
-.gm-add-line-btn:hover { background: #eff6ff; }
+.gm-add-line-btn:hover { background: var(--info-bg, #eff6ff); }
 .gm-pago-chips { display: flex; gap: 8px; flex-wrap: wrap; }
 .gm-pago-chip {
-  padding: 7px 16px; border-radius: 20px; border: 1.5px solid #e2e8f0; background: #fff;
-  font-size: 13px; font-weight: 600; color: #64748b; cursor: pointer; transition: all .15s;
+  padding: 7px 16px; border-radius: 20px; border: 1.5px solid var(--border, #e2e8f0); background: var(--surface, #fff);
+  font-size: 13px; font-weight: 600; color: var(--muted-fg, #64748b); cursor: pointer; transition: all .15s;
 }
-.gm-pago-chip.active { background: #1d4ed8; border-color: #1d4ed8; color: #fff; }
+.gm-pago-chip.active { background: var(--primary, #1d4ed8); border-color: var(--primary, #1d4ed8); color: #fff; }
 .gm-total-display {
   display: flex; justify-content: space-between; align-items: center;
-  background: #f8faff; border: 1.5px solid #bfdbfe; border-radius: 12px; padding: 12px 16px;
+  background: var(--info-bg, #f8faff); border: 1.5px solid var(--info-border, #bfdbfe); border-radius: 12px; padding: 12px 16px;
 }
-.gm-total-label { font-size: 13px; font-weight: 600; color: #64748b; }
-.gm-total-value { font-size: 20px; font-weight: 800; color: #1d4ed8; }
-.gm-col-header {
-  display: grid;
-  grid-template-columns: 1fr 110px 90px 100px 32px;
+.gm-total-label { font-size: 13px; font-weight: 600; color: var(--muted-fg, #64748b); }
+.gm-total-value { font-size: 20px; font-weight: 800; color: var(--primary, #1d4ed8); }
+.gm-col-header { display: none; }
+
+/* ── Panel Administración de Productos ── */
+.admin-prod-panel {
+  position: fixed;
+  inset: 0;
+  background: var(--muted, #f8fafc);
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform .3s cubic-bezier(.4,0,.2,1);
+}
+.admin-prod-panel.open { transform: translateX(0); }
+/* Modal de producto: z-index por encima del panel admin (300) */
+#productModalOverlay {
+  z-index: 350;
+}
+.admin-prod-search-row {
+  padding: 10px 0 12px;
+}
+.admin-prod-search-row .search-wrap input {
+  width: 100%;
+  height: 40px;
+  padding: 0 36px 0 38px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  background: var(--muted);
+  color: var(--fg);
+  outline: none;
+  transition: border-color .15s;
+}
+.admin-prod-search-row .search-wrap input:focus {
+  border-color: var(--primary);
+  background: var(--surface);
+}
+/* El cat-filter-bar dentro del panel admin no tiene border-top */
+.admin-prod-panel .cat-filter-bar {
+  border-top: none;
+  border-bottom: 1px solid var(--border);
+}
+.admin-prod-header {
+  background: var(--surface, #fff);
+  border-bottom: 1.5px solid var(--border, #e2e8f0);
+  padding: 0 16px;
+  flex-shrink: 0;
+}
+.admin-prod-header-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 0;
+}
+.admin-prod-title { font-size: 18px; font-weight: 800; color: var(--fg, #0f172a); flex: 1; }
+.admin-prod-add-btn {
+  display: flex;
+  align-items: center;
   gap: 6px;
+  height: 40px;
+  padding: 0 14px;
+  background: #1d4ed8;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: filter .15s;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
-.gm-col-header span { font-size: 10px; font-weight: 700; color: #94a3b8; letter-spacing: .3px; text-transform: uppercase; }
+.admin-prod-add-btn:hover { filter: brightness(1.1); }
+.admin-prod-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+.admin-prod-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+/* tarjetas en modo admin — click abre modal directo, sin animación de carrito */
+.admin-prod-card {
+  background: var(--surface, #fff);
+  border: 1.5px solid var(--border, #e2e8f0);
+  border-radius: 14px;
+  padding: 12px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.1s, border-color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.admin-prod-card:active { transform: scale(0.97); }
+.admin-prod-card:hover { border-color: var(--primary, #93c5fd); }
+.admin-prod-edit-hint {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: var(--info-bg, #eff6ff);
+  border: 1px solid var(--info-border, #bfdbfe);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary, #1d4ed8);
+  opacity: 0.7;
+}
+.admin-prod-card:hover .admin-prod-edit-hint { opacity: 1; }
+.admin-prod-emoji {
+  position: absolute;
+  top: 34px;
+  font-size: 20px;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.25;
+}
+.admin-prod-name {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  min-height: 2.7em;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: var(--fg, #0f172a);
+  padding-right: 18px;
+}
+.admin-prod-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+}
+.admin-prod-price {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--primary, #1d4ed8);
+}
+.admin-prod-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: var(--bg, #f1f5f9);
+  color: var(--muted-fg, #64748b);
+  text-transform: uppercase;
+  letter-spacing: .3px;
+}
+
+/* ===== PANEL CONFIGURACIÓN ===== */
+.config-section {
+  background: var(--surface, #fff);
+  border-radius: 14px;
+  border: 1.5px solid var(--border, #e2e8f0);
+  overflow: hidden;
+}
+.config-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+  color: var(--muted-fg, #94a3b8);
+  padding: 14px 16px 8px;
+}
+.config-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  gap: 12px;
+  border-top: 1px solid var(--border, #e2e8f0);
+}
+.config-row-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--muted-fg, #64748b);
+}
+.config-row-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fg, #0f172a);
+  line-height: 1.2;
+}
+.config-row-sub {
+  font-size: 12px;
+  color: var(--muted-fg, #94a3b8);
+  margin-top: 2px;
+}
+.config-toggle { position: relative; display: inline-block; cursor: pointer; flex-shrink: 0; }
+.config-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
+.config-toggle-track {
+  display: block;
+  width: 48px;
+  height: 28px;
+  border-radius: 14px;
+  background: var(--border, #cbd5e1);
+  transition: background .2s;
+  position: relative;
+}
+.config-toggle input:checked + .config-toggle-track { background: var(--primary, #2563eb); }
+.config-toggle-thumb {
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--surface, #fff);
+  box-shadow: 0 1px 4px rgba(0,0,0,.18);
+  transition: transform .2s;
+}
+.config-toggle input:checked + .config-toggle-track .config-toggle-thumb { transform: translateX(20px); }
 </style>
 </head>
 
@@ -488,26 +867,27 @@
       <input type="password" id="loginPass" placeholder="Contraseña" autocomplete="current-password">
     </div>
     <div class="login-error" id="loginError"></div>
-    <button class="login-btn" data-action="doLogin">
-      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
-        <polyline points="10 17 15 12 10 7"/>
-        <line x1="15" y1="12" x2="3" y2="12"/>
-      </svg>
-      Ingresar
+    <button class="login-btn" id="loginBtn" data-action="doLogin">
+      <span class="login-btn-default">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+          <polyline points="10 17 15 12 10 7"/>
+          <line x1="15" y1="12" x2="3" y2="12"/>
+        </svg>
+        Ingresar
+      </span>
+      <span class="login-btn-loading">
+        <svg class="login-spinner" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+        </svg>
+        Ingresando...
+      </span>
     </button>
   </div>
 </div>
 
 <div id="mesasScreen" style="display:none;flex-direction:column;height:100%;background:var(--bg,#f1f5f9);">
   <header class="header" style="justify-content:space-between;align-items:center;gap:10px;">
-    <button class="logout-btn" data-action="doLogout" title="Cerrar sesión">
-      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-        <polyline points="16 17 21 12 16 7"/>
-        <line x1="21" y1="12" x2="9" y2="12"/>
-      </svg>
-    </button>
     <div style="display:flex;flex-direction:column;align-items:center;flex:1;">
       <div style="font-size:17px;font-weight:700;color:var(--fg,#0f172a);letter-spacing:-0.3px;">Mesas</div>
       <div id="usuarioHeader" style="font-size:12px;font-weight:600;color:#64748b;margin-top:2px;"></div>
@@ -542,9 +922,11 @@
         </button>
         <button class="admin-menu-item" data-action="adminMenuAction" data-arg="producto">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M5 12h14"/><path d="M12 5v14"/>
+            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <path d="M16 10a4 4 0 0 1-8 0"/>
           </svg>
-          Agregar producto
+          Administración de productos
         </button>
         <button class="admin-menu-item" data-action="adminMenuAction" data-arg="gastos">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -555,6 +937,22 @@
             <polyline points="10 9 9 9 8 9"/>
           </svg>
           Cargar gasto
+        </button>
+        <button class="admin-menu-item" data-action="adminMenuAction" data-arg="configuracion">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+          Configuración
+        </button>
+        <div class="admin-menu-separator"></div>
+        <button class="admin-menu-item admin-menu-logout" data-action="doLogout">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          Cerrar sesión
         </button>
       </div>
     </div>
@@ -685,8 +1083,8 @@
         </div>
       </div>
       <div class="cambio-modal-footer">
-        <button class="cambio-cancel-btn" data-action="cerrarCambio">Cancelar</button>
-        <button class="cambio-confirm-btn" id="cambioPagarBtn" data-action="confirmarPagoEfectivo" disabled>Confirmar pago</button>
+        <button class="cambio-cancel-btn btn-secondary" data-action="cerrarCambio">Cancelar</button>
+        <button class="cambio-confirm-btn btn-success" id="cambioPagarBtn" data-action="confirmarPagoEfectivo" disabled>Confirmar pago</button>
       </div>
     </div>
   </div>
@@ -703,14 +1101,7 @@
         <div class="report-header-title">Reporte de Ventas</div>
         <div class="report-header-sub" id="reportSubtitle">Cargando datos...</div>
       </div>
-    </div>
-    <div class="report-header-row2">
-      <button class="backup-btn" id="backupBtn" data-action="generarRespaldo" title="Generar respaldo">
-        <svg class="icon-backup" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        <svg class="icon-spin" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
-        Respaldo
-      </button>
-      <button class="backup-btn" data-action="cargarVentas" data-arg="true" title="Actualizar ventas">
+      <button class="backup-btn" data-action="cargarVentas" data-arg="true" title="Actualizar ventas" style="margin-left:auto;">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>
           <path d="M21 3v5h-5"/>
@@ -786,7 +1177,7 @@
         <!-- se renderiza dinámicamente -->
       </div>
 
-      <button class="gastos-confirm-btn" id="gastosConfirmBtn" data-action="confirmarGasto">
+      <button class="gastos-confirm-btn btn-success btn-full" id="gastosConfirmBtn" data-action="confirmarGasto">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
         Confirmar y guardar
       </button>
@@ -821,8 +1212,7 @@
     <div class="gm-col-header">
       <span>Descripción</span>
       <span>Rubro</span>
-      <span>Cantidad</span>
-      <span>Costo</span>
+      <span>Cant. / Costo</span>
       <span></span>
     </div>
     <div id="gmProductosContainer">
@@ -848,11 +1238,564 @@
     </div>
 
     <!-- Guardar -->
-    <button class="gastos-confirm-btn" id="gmGuardarBtn" data-action="guardarGastoManual">
+    <button class="gastos-confirm-btn btn-success btn-full" id="gmGuardarBtn" data-action="guardarGastoManual">
       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
       Guardar gasto
     </button>
 
+  </div>
+</div>
+
+<div class="nombre-modal-overlay" id="nombreModalOverlay" data-action="handleNombreOverlayClick">
+  <div class="nombre-modal">
+    <div class="nombre-modal-title" id="nombreModalTitle">Nombre de la mesa</div>
+    <input type="text" id="nombreModalInput" placeholder="Ej: Terraza, Ventana, VIP..." maxlength="20" autocomplete="off">
+    <div class="nombre-modal-btns">
+      <button class="btn-cancelar-nombre btn-secondary" data-action="cerrarNombreModal">Cancelar</button>
+      <button class="btn-guardar-nombre btn-primary" data-action="guardarNombreMesa">Guardar</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     PANEL REPORTE GASTOS
+══════════════════════════════════════ -->
+<div class="gastos-report-panel" id="gastosReportPanel">
+  <div class="gastos-header">
+    <div class="gastos-header-row1">
+      <button class="icon-btn" data-action="closeGastosReport">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="gastos-header-title">Reporte de Gastos</div>
+      <button class="backup-btn" data-action="cargarGastos" title="Actualizar" style="margin-left:auto;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="gastos-body" style="gap:14px;">
+    <!-- Filtros -->
+    <div class="filter-card">
+      <h3>Filtrar por fecha</h3>
+      <div class="filter-row">
+        <div class="filter-group">
+          <label for="grFechaDesde">Desde</label>
+          <input type="date" id="grFechaDesde">
+        </div>
+        <div class="filter-group">
+          <label for="grFechaHasta">Hasta</label>
+          <input type="date" id="grFechaHasta">
+        </div>
+        <button class="filter-apply-btn" data-action="aplicarFiltroGastos">Aplicar</button>
+      </div>
+      <div class="quick-filters">
+        <button class="qf-btn" id="grQf_hoy"    data-action="setQuickFilterGastos" data-qf="hoy">Hoy</button>
+        <button class="qf-btn" id="grQf_semana" data-action="setQuickFilterGastos" data-qf="semana">Esta semana</button>
+        <button class="qf-btn" id="grQf_mes"    data-action="setQuickFilterGastos" data-qf="mes">Este mes</button>
+        <button class="qf-btn" id="grQf_todo"   data-action="setQuickFilterGastos" data-qf="todo">Todo</button>
+      </div>
+      <div class="gr-rubro-chips" id="grRubroChips"></div>
+    </div>
+    <!-- Contenido dinámico -->
+    <div id="gastosReportContent">
+      <div class="report-loading"><div class="spinner"></div><span>Cargando gastos...</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- Panel Administración de Productos -->
+<div class="admin-prod-panel" id="adminProdPanel">
+  <div class="admin-prod-header">
+    <div class="admin-prod-header-row">
+      <button class="icon-btn" data-action="closeAdminProd">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="admin-prod-title">Productos</div>
+      <button class="admin-prod-add-btn" data-action="openAddProductoAdmin">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        Nuevo
+      </button>
+    </div>
+    <div class="admin-prod-search-row">
+      <div class="search-wrap" style="max-width:100%;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="adminSearch" placeholder="Buscar producto..." data-oninput="handleAdminSearch" autocomplete="off">
+        <button class="icon-btn" id="adminSearchClear" data-action="clearAdminSearch" style="background:none;border:none;width:30px;height:30px;border-radius:6px;display:none;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="cat-filter-bar" id="adminCatFilterBar">
+    <button class="cat-chip active" data-admin-cat="todos" data-action="setAdminCatFilter">Todos</button>
+    <button class="cat-chip" data-admin-cat="bebidas_calientes" data-action="setAdminCatFilter"><span class="chip-dot" style="background:#f97316"></span>☕ Bebidas calientes</button>
+    <button class="cat-chip" data-admin-cat="bebidas_frias" data-action="setAdminCatFilter"><span class="chip-dot" style="background:#06b6d4"></span>🍹 Bebidas frías</button>
+    <button class="cat-chip" data-admin-cat="dulces" data-action="setAdminCatFilter"><span class="chip-dot" style="background:#ec4899"></span>🍰 Dulces</button>
+    <button class="cat-chip" data-admin-cat="postres" data-action="setAdminCatFilter"><span class="chip-dot" style="background:#8b5cf6"></span>🍮 Postres</button>
+    <button class="cat-chip" data-admin-cat="salados" data-action="setAdminCatFilter"><span class="chip-dot" style="background:#84cc16"></span>🥪 Salados</button>
+    <button class="cat-chip" data-admin-cat="tortas" data-action="setAdminCatFilter"><span class="chip-dot" style="background:#f59e0b"></span>🎂 Tortas</button>
+    <button class="cat-chip" data-admin-cat="meriendas" data-action="setAdminCatFilter"><span class="chip-dot" style="background:#10b981"></span>🥐 Meriendas</button>
+  </div>
+  <div class="admin-prod-body">
+    <div class="admin-prod-grid" id="adminProdGrid"></div>
+  </div>
+</div>
+<!-- Supabase -->
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
+<div id="mesasScreen" style="display:none;flex-direction:column;height:100%;background:var(--bg,#f1f5f9);">
+  <header class="header" style="justify-content:space-between;align-items:center;gap:10px;">
+    <div style="display:flex;flex-direction:column;align-items:center;flex:1;">
+      <div style="font-size:17px;font-weight:700;color:var(--fg,#0f172a);letter-spacing:-0.3px;">Mesas</div>
+      <div id="usuarioHeader" style="font-size:12px;font-weight:600;color:#64748b;margin-top:2px;"></div>
+    </div>
+    <!-- Menú administrador -->
+    <div id="adminMenuWrap" style="position:relative;display:none;">
+      <button class="report-btn" id="adminMenuBtn" data-action="toggleAdminMenu" title="Menú administrador" aria-haspopup="true" aria-expanded="false">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="3" y1="6"  x2="21" y2="6"/>
+          <line x1="3" y1="12" x2="21" y2="12"/>
+          <line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+      <div id="adminMenu" class="admin-dropdown" style="display:none;">
+        <button class="admin-menu-item" data-action="adminMenuAction" data-arg="reporte">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10"/>
+            <line x1="12" y1="20" x2="12" y2="4"/>
+            <line x1="6" y1="20" x2="6" y2="14"/>
+            <path d="M2 20h20"/>
+          </svg>
+          Reporte ingresos
+        </button>
+        <button class="admin-menu-item" data-action="adminMenuAction" data-arg="reporte-gastos">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10"/>
+            <line x1="12" y1="20" x2="12" y2="4"/>
+            <line x1="6" y1="20" x2="6" y2="14"/>
+            <path d="M2 20h20"/>
+          </svg>
+          Reporte gastos
+        </button>
+        <button class="admin-menu-item" data-action="adminMenuAction" data-arg="producto">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <path d="M16 10a4 4 0 0 1-8 0"/>
+          </svg>
+          Administración de productos
+        </button>
+        <button class="admin-menu-item" data-action="adminMenuAction" data-arg="gastos">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+          Cargar gasto
+        </button>
+        <button class="admin-menu-item" data-action="adminMenuAction" data-arg="configuracion">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+          Configuración
+        </button>
+        <div class="admin-menu-separator"></div>
+        <button class="admin-menu-item admin-menu-logout" data-action="doLogout">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          Cerrar sesión
+        </button>
+      </div>
+    </div>
+  </header>
+  <main style="flex:1;overflow-y:auto;padding:16px;">
+    <div id="mesasGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;max-width:700px;margin:0 auto;"></div>
+  </main>
+</div>
+
+<div id="posApp" style="display:none;flex-direction:column;height:100%;">
+
+  <div class="pay-loader hidden" id="payLoader">
+    <div class="spinner"></div>
+    <p>Procesando pago...</p>
+  </div>
+
+  <div class="toast-wrap" id="toastWrap"></div>
+
+  <header class="header">
+    <button class="report-btn" data-action="volverAMesas" title="Volver a mesas" id="btnVolverMesas" style="display:none;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M15 18l-6-6 6-6"/>
+      </svg>
+    </button>
+    <button class="report-btn" data-action="recargarProductos" data-arg="true" title="Recargar productos">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>
+        <path d="M21 3v5h-5"/>
+      </svg>
+    </button>
+    <div class="search-wrap">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="text" id="search" placeholder="Buscar producto..." data-oninput="handleSearch" autocomplete="off">
+      <button class="icon-btn" id="search-clear" data-action="clearSearch" style="background:none;border:none;width:30px;height:30px;border-radius:6px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+    <div class="total-box">
+      <span class="total-label">Total</span>
+      <div class="total-amount" id="totalAmount">$0</div>
+      <div id="mesaBadge" style="display:none;font-size:11px;font-weight:600;color:var(--primary,#1d4ed8);letter-spacing:.2px;margin-top:1px;white-space:nowrap;"></div>
+    </div>
+  </header>
+
+  <div class="cat-filter-bar" id="catFilterBar">
+    <button class="cat-chip active" data-cat="todos" data-action="setCatFilter" data-cat="todos">Todos</button>
+    <button class="cat-chip" data-cat="bebidas_calientes" data-action="setCatFilter" data-cat="bebidas_calientes"><span class="chip-dot" style="background:#f97316"></span>☕ Bebidas calientes</button>
+    <button class="cat-chip" data-cat="bebidas_frias" data-action="setCatFilter" data-cat="bebidas_frias"><span class="chip-dot" style="background:#06b6d4"></span>🍹 Bebidas frías</button>
+    <button class="cat-chip" data-cat="dulces" data-action="setCatFilter" data-cat="dulces"><span class="chip-dot" style="background:#ec4899"></span>🍰 Dulces</button>
+    <button class="cat-chip" data-cat="postres" data-action="setCatFilter" data-cat="postres"><span class="chip-dot" style="background:#8b5cf6"></span>🍮 Postres</button>
+    <button class="cat-chip" data-cat="salados" data-action="setCatFilter" data-cat="salados"><span class="chip-dot" style="background:#84cc16"></span>🥪 Salados</button>
+    <button class="cat-chip" data-cat="tortas" data-action="setCatFilter" data-cat="tortas"><span class="chip-dot" style="background:#f59e0b"></span>🎂 Tortas</button>
+    <button class="cat-chip" data-cat="meriendas" data-action="setCatFilter" data-cat="meriendas"><span class="chip-dot" style="background:#10b981"></span>🥐 Meriendas</button>
+  </div>
+
+  <main class="main">
+    <div id="stateCenter" class="state-center"><div class="spinner"></div></div>
+    <div class="grid" id="grid"></div>
+  </main>
+
+  <button class="fab hidden" id="fab" data-action="openDrawer">
+    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+    Ver Carrito
+    <span class="fab-badge" id="fabBadge">0</span>
+  </button>
+
+  <div class="overlay" id="overlay" data-action="closeDrawer"></div>
+
+  <div class="drawer" id="drawer">
+    <div class="drawer-head">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="drawer-title">Carrito</span>
+        <span id="drawerMesaBadge" style="display:none;font-size:12px;font-weight:700;background:var(--primary,#1d4ed8);color:#fff;border-radius:6px;padding:2px 9px;letter-spacing:.2px;"></span>
+      </div>
+      <button class="icon-btn" data-action="closeDrawer">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+    <div class="drawer-items" id="drawerItems">
+      <div class="empty-cart">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+        <p>El carrito está vacío</p>
+      </div>
+    </div>
+    <div class="drawer-footer">
+      <div class="discount-row">
+        <input type="number" id="discount" placeholder="Desc. %" min="0" max="100" data-oninput="updateDrawerTotal">
+        <input type="text" id="discountDesc" placeholder="Motivo del descuento">
+      </div>
+      <div class="totals" id="totalsBox">
+        <div class="totals-row" id="subtotalRow"><span>Subtotal</span><span id="subtotalVal">$0</span></div>
+        <div class="totals-row discount" id="discountRow" style="display:none">
+          <span id="discountLabel">Descuento (0%)</span>
+          <span id="discountVal">-$0</span>
+        </div>
+        <div class="totals-row total-final"><span>Total</span><span id="cartTotal">$0</span></div>
+      </div>
+      <div class="pay-row">
+        <button class="pay-btn cash"   data-action="abrirCambio" data-arg="efectivo" id="btnEfectivo" disabled>Efectivo</button>
+        <button class="pay-btn debit"  data-action="pagar" data-arg="debito"         id="btnDebito"   disabled>Débito</button>
+        <button class="pay-btn credit" data-action="pagar" data-arg="credito"        id="btnCredito"  disabled>Crédito</button>
+      </div>
+      <button class="clear-btn" id="clearBtn" data-action="clearCart" disabled>Vaciar carrito</button>
+    </div>
+  </div>
+
+  <div class="cambio-modal-overlay" id="cambioModalOverlay" data-action="handleCambioOverlayClick">
+    <div class="cambio-modal">
+      <div class="cambio-modal-head">
+        <span class="cambio-modal-title">Pago en efectivo</span>
+        <button class="icon-btn" data-action="cerrarCambio">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+      <div class="cambio-modal-body">
+        <div>
+          <div class="cambio-total-label">Total a cobrar</div>
+          <div class="cambio-total-val" id="cambioTotalVal">$0</div>
+        </div>
+        <div class="cambio-field">
+          <label for="cambioMonto">Monto recibido</label>
+          <input type="number" id="cambioMonto" placeholder="0" min="0" data-oninput="calcularCambio" inputmode="numeric">
+        </div>
+        <div class="cambio-quick-btns" id="cambioQuickBtns"></div>
+        <div class="cambio-result">
+          <span class="cambio-result-label">Vuelto</span>
+          <span class="cambio-result-val" id="cambioResultVal">—</span>
+        </div>
+      </div>
+      <div class="cambio-modal-footer">
+        <button class="cambio-cancel-btn btn-secondary" data-action="cerrarCambio">Cancelar</button>
+        <button class="cambio-confirm-btn btn-success" id="cambioPagarBtn" data-action="confirmarPagoEfectivo" disabled>Confirmar pago</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="report-panel" id="reportPanel">
+  <div class="report-header">
+    <div class="report-header-row1">
+      <button class="icon-btn" data-action="closeReport">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="report-header-titles">
+        <div class="report-header-title">Reporte de Ventas</div>
+        <div class="report-header-sub" id="reportSubtitle">Cargando datos...</div>
+      </div>
+      <button class="backup-btn" data-action="cargarVentas" data-arg="true" title="Actualizar ventas" style="margin-left:auto;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>
+          <path d="M21 3v5h-5"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+  <div class="report-body" id="reportBody">
+    <div class="filter-card">
+      <h3>Filtrar por fecha</h3>
+      <div class="filter-row">
+        <div class="filter-group">
+          <label for="fechaDesde">Desde</label>
+          <input type="date" id="fechaDesde">
+        </div>
+        <div class="filter-group">
+          <label for="fechaHasta">Hasta</label>
+          <input type="date" id="fechaHasta">
+        </div>
+        <button class="filter-apply-btn" data-action="aplicarFiltro">Aplicar</button>
+      </div>
+      <div class="quick-filters">
+        <button class="qf-btn" data-action="setQuickFilter" data-qf="hoy">Hoy</button>
+        <button class="qf-btn" data-action="setQuickFilter" data-qf="semana">Esta semana</button>
+        <button class="qf-btn" data-action="setQuickFilter" data-qf="mes">Este mes</button>
+        <button class="qf-btn" data-action="setQuickFilter" data-qf="todo">Todo</button>
+      </div>
+    </div>
+    <div id="reportContent">
+      <div class="report-loading"><div class="spinner"></div><span>Cargando ventas...</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     PANEL GASTOS
+══════════════════════════════════════ -->
+<div class="gastos-panel" id="gastosPanel">
+  <div class="gastos-header">
+    <div class="gastos-header-row1">
+      <button class="icon-btn" data-action="closeGastos">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="gastos-header-title">Cargar Gasto</div>
+    </div>
+    <div class="gastos-tabs">
+      <button class="gastos-tab active" id="tabJson" data-action="switchGastosTab" data-arg="json">📄 Subir JSON</button>
+      <button class="gastos-tab" id="tabManual" data-action="switchGastosTab" data-arg="manual">✏️ Manual</button>
+    </div>
+  </div>
+
+  <!-- TAB JSON -->
+  <div class="gastos-body" id="gastosTabJson">
+    <p style="font-size:13px;color:#64748b;margin:0;">
+      Pegá el JSON de la factura electrónica. Se mostrará una vista previa antes de confirmar el guardado.
+    </p>
+    <div class="gastos-error-msg" id="gastosJsonError"></div>
+    <textarea
+      class="gastos-json-area"
+      id="gastosJsonInput"
+      placeholder='{"empresa": "...", "fecha": "...", "total": 0, ...}'
+      data-oninput="onGastosJsonInput"
+    ></textarea>
+    <button class="gastos-parse-btn" id="gastosParseBtn" data-action="parsearGastoJson">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      Vista previa
+    </button>
+
+    <!-- Preview (oculta hasta parsear) -->
+    <div id="gastosPreview" style="display:none;display:flex;flex-direction:column;gap:14px;">
+
+      <div class="gasto-preview-card" id="gastosPreviewCard">
+        <!-- se renderiza dinámicamente -->
+      </div>
+
+      <button class="gastos-confirm-btn btn-success btn-full" id="gastosConfirmBtn" data-action="confirmarGasto">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+        Confirmar y guardar
+      </button>
+    </div>
+  </div>
+
+  <!-- TAB MANUAL -->
+  <div class="gastos-body" id="gastosTabManual" style="display:none; gap:14px;">
+
+    <div class="gastos-error-msg" id="gastosManualError"></div>
+
+    <!-- Empresa + Fecha -->
+    <div class="gm-row">
+      <div class="gm-field" style="flex:2;">
+        <label class="gm-label">Empresa *</label>
+        <input class="gm-input" id="gmEmpresa" type="text" placeholder="Nombre del proveedor" autocomplete="off">
+      </div>
+      <div class="gm-field" style="flex:1;">
+        <label class="gm-label">Fecha *</label>
+        <input class="gm-input" id="gmFecha" type="date">
+      </div>
+    </div>
+
+    <!-- Nro factura -->
+    <div class="gm-field">
+      <label class="gm-label">Nro. de factura <span style="font-weight:400;text-transform:none;letter-spacing:0;">(opcional)</span></label>
+      <input class="gm-input" id="gmNroFactura" type="text" placeholder="Ej: 0001-000123" autocomplete="off">
+    </div>
+
+    <!-- Productos -->
+    <div class="gm-section-title">Productos</div>
+    <div class="gm-col-header">
+      <span>Descripción</span>
+      <span>Rubro</span>
+      <span>Cant. / Costo</span>
+      <span></span>
+    </div>
+    <div id="gmProductosContainer">
+      <!-- filas generadas dinámicamente -->
+    </div>
+    <button class="gm-add-line-btn" data-action="gmAgregarLinea">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      Agregar producto
+    </button>
+
+    <!-- Modo de pago -->
+    <div class="gm-section-title" style="margin-top:2px;">Modo de pago *</div>
+    <div class="gm-pago-chips">
+      <button class="gm-pago-chip" data-pago="efectivo">💵 Efectivo</button>
+      <button class="gm-pago-chip" data-pago="debito">💳 Débito</button>
+      <button class="gm-pago-chip" data-pago="credito">💳 Crédito</button>
+    </div>
+
+    <!-- Total -->
+    <div class="gm-total-display">
+      <span class="gm-total-label">Total factura</span>
+      <span class="gm-total-value" id="gmTotalDisplay">$ 0,00</span>
+    </div>
+
+    <!-- Guardar -->
+    <button class="gastos-confirm-btn btn-success btn-full" id="gmGuardarBtn" data-action="guardarGastoManual">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+      Guardar gasto
+    </button>
+
+  </div>
+</div>
+
+<div class="nombre-modal-overlay" id="nombreModalOverlay" data-action="handleNombreOverlayClick">
+  <div class="nombre-modal">
+    <div class="nombre-modal-title" id="nombreModalTitle">Nombre de la mesa</div>
+    <input type="text" id="nombreModalInput" placeholder="Ej: Terraza, Ventana, VIP..." maxlength="20" autocomplete="off">
+    <div class="nombre-modal-btns">
+      <button class="btn-cancelar-nombre btn-secondary" data-action="cerrarNombreModal">Cancelar</button>
+      <button class="btn-guardar-nombre btn-primary" data-action="guardarNombreMesa">Guardar</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     PANEL REPORTE GASTOS
+══════════════════════════════════════ -->
+<div class="gastos-report-panel" id="gastosReportPanel">
+  <div class="gastos-header">
+    <div class="gastos-header-row1">
+      <button class="icon-btn" data-action="closeGastosReport">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="gastos-header-title">Reporte de Gastos</div>
+      <button class="backup-btn" data-action="cargarGastos" title="Actualizar" style="margin-left:auto;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="gastos-body" style="gap:14px;">
+    <!-- Filtros -->
+    <div class="filter-card">
+      <h3>Filtrar por fecha</h3>
+      <div class="filter-row">
+        <div class="filter-group">
+          <label for="grFechaDesde">Desde</label>
+          <input type="date" id="grFechaDesde">
+        </div>
+        <div class="filter-group">
+          <label for="grFechaHasta">Hasta</label>
+          <input type="date" id="grFechaHasta">
+        </div>
+        <button class="filter-apply-btn" data-action="aplicarFiltroGastos">Aplicar</button>
+      </div>
+      <div class="quick-filters">
+        <button class="qf-btn" id="grQf_hoy"    data-action="setQuickFilterGastos" data-qf="hoy">Hoy</button>
+        <button class="qf-btn" id="grQf_semana" data-action="setQuickFilterGastos" data-qf="semana">Esta semana</button>
+        <button class="qf-btn" id="grQf_mes"    data-action="setQuickFilterGastos" data-qf="mes">Este mes</button>
+        <button class="qf-btn" id="grQf_todo"   data-action="setQuickFilterGastos" data-qf="todo">Todo</button>
+      </div>
+      <div class="gr-rubro-chips" id="grRubroChips"></div>
+    </div>
+    <!-- Contenido dinámico -->
+    <div id="gastosReportContent">
+      <div class="report-loading"><div class="spinner"></div><span>Cargando gastos...</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- Panel Administración de Productos -->
+<div class="admin-prod-panel" id="adminProdPanel">
+  <div class="admin-prod-header">
+    <div class="admin-prod-header-row">
+      <button class="icon-btn" data-action="closeAdminProd">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="admin-prod-title">Productos</div>
+      <button class="admin-prod-add-btn" data-action="openAddProductoAdmin">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        Nuevo
+      </button>
+    </div>
+    <div class="admin-prod-search-row">
+      <div class="search-wrap" style="max-width:100%;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="adminSearch" placeholder="Buscar producto..." data-oninput="handleAdminSearch" autocomplete="off">
+        <button class="icon-btn" id="adminSearchClear" data-action="clearAdminSearch" style="background:none;border:none;width:30px;height:30px;border-radius:6px;display:none;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="cat-filter-bar" id="adminCatFilterBar">
+    <button class="cat-chip active" data-admin-cat="todos" data-action="setAdminCatFilter">Todos</button>
+    <button class="cat-chip" data-admin-cat="bebidas_calientes" data-action="setAdminCatFilter"><span class="chip-dot" style="background:#f97316"></span>☕ Bebidas calientes</button>
+    <button class="cat-chip" data-admin-cat="bebidas_frias" data-action="setAdminCatFilter"><span class="chip-dot" style="background:#06b6d4"></span>🍹 Bebidas frías</button>
+    <button class="cat-chip" data-admin-cat="dulces" data-action="setAdminCatFilter"><span class="chip-dot" style="background:#ec4899"></span>🍰 Dulces</button>
+    <button class="cat-chip" data-admin-cat="postres" data-action="setAdminCatFilter"><span class="chip-dot" style="background:#8b5cf6"></span>🍮 Postres</button>
+    <button class="cat-chip" data-admin-cat="salados" data-action="setAdminCatFilter"><span class="chip-dot" style="background:#84cc16"></span>🥪 Salados</button>
+    <button class="cat-chip" data-admin-cat="tortas" data-action="setAdminCatFilter"><span class="chip-dot" style="background:#f59e0b"></span>🎂 Tortas</button>
+    <button class="cat-chip" data-admin-cat="meriendas" data-action="setAdminCatFilter"><span class="chip-dot" style="background:#10b981"></span>🥐 Meriendas</button>
+  </div>
+  <div class="admin-prod-body">
+    <div class="admin-prod-grid" id="adminProdGrid"></div>
   </div>
 </div>
 
@@ -917,11 +1860,11 @@
       </div>
     </div>
     <div class="modal-footer">
-      <button class="modal-delete-btn" id="deleteProductBtn" data-action="eliminarProducto" style="display:none">
+      <button class="modal-delete-btn btn-danger" id="deleteProductBtn" data-action="eliminarProducto" style="display:none">
         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
       </button>
-      <button class="modal-cancel-btn" data-action="closeProductModal">Cancelar</button>
-      <button class="modal-save-btn" id="saveProductBtn" data-action="guardarProducto">
+      <button class="modal-cancel-btn btn-secondary" data-action="closeProductModal">Cancelar</button>
+      <button class="modal-save-btn btn-primary" id="saveProductBtn" data-action="guardarProducto">
         <svg class="icon-spin-save" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
         <span class="save-label">Guardar</span>
       </button>
@@ -929,65 +1872,43 @@
   </div>
 </div>
 
-<div class="nombre-modal-overlay" id="nombreModalOverlay" data-action="handleNombreOverlayClick">
-  <div class="nombre-modal">
-    <div class="nombre-modal-title" id="nombreModalTitle">Nombre de la mesa</div>
-    <input type="text" id="nombreModalInput" placeholder="Ej: Terraza, Ventana, VIP..." maxlength="20" autocomplete="off">
-    <div class="nombre-modal-btns">
-      <button class="btn-cancelar-nombre" data-action="cerrarNombreModal">Cancelar</button>
-      <button class="btn-guardar-nombre"  data-action="guardarNombreMesa">Guardar</button>
-    </div>
-  </div>
-</div>
 
-
-<!-- ══════════════════════════════════════
-     PANEL REPORTE GASTOS
-══════════════════════════════════════ -->
-<div class="gastos-report-panel" id="gastosReportPanel">
+<!-- Panel Configuración -->
+<div class="gastos-report-panel" id="configPanel">
   <div class="gastos-header">
     <div class="gastos-header-row1">
-      <button class="icon-btn" data-action="closeGastosReport">
+      <button class="icon-btn" data-action="closeConfig">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
       </button>
-      <div class="gastos-header-title">Reporte de Gastos</div>
-      <button class="backup-btn" data-action="cargarGastos" title="Actualizar" style="margin-left:auto;">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
-      </button>
+      <div class="gastos-header-title">Configuración</div>
     </div>
   </div>
-  <div class="gastos-body" style="gap:14px;">
-    <!-- Filtros -->
-    <div class="filter-card">
-      <h3>Filtrar por fecha</h3>
-      <div class="filter-row">
-        <div class="filter-group">
-          <label for="grFechaDesde">Desde</label>
-          <input type="date" id="grFechaDesde">
+  <div class="gastos-body" style="gap:16px;">
+
+    <!-- Sección Apariencia -->
+    <div class="config-section">
+      <div class="config-section-title">Apariencia</div>
+      <div class="config-row" id="configDarkModeRow">
+        <div class="config-row-info">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          <div>
+            <div class="config-row-label">Modo oscuro</div>
+            <div class="config-row-sub">Ajusta el tema visual de la app</div>
+          </div>
         </div>
-        <div class="filter-group">
-          <label for="grFechaHasta">Hasta</label>
-          <input type="date" id="grFechaHasta">
-        </div>
-        <button class="filter-apply-btn" data-action="aplicarFiltroGastos">Aplicar</button>
+        <label class="config-toggle">
+          <input type="checkbox" id="darkModeToggle">
+          <span class="config-toggle-track">
+            <span class="config-toggle-thumb"></span>
+          </span>
+        </label>
       </div>
-      <div class="quick-filters">
-        <button class="qf-btn" id="grQf_hoy"    data-action="setQuickFilterGastos" data-qf="hoy">Hoy</button>
-        <button class="qf-btn" id="grQf_semana" data-action="setQuickFilterGastos" data-qf="semana">Esta semana</button>
-        <button class="qf-btn" id="grQf_mes"    data-action="setQuickFilterGastos" data-qf="mes">Este mes</button>
-        <button class="qf-btn" id="grQf_todo"   data-action="setQuickFilterGastos" data-qf="todo">Todo</button>
-      </div>
-      <div class="gr-rubro-chips" id="grRubroChips"></div>
     </div>
-    <!-- Contenido dinámico -->
-    <div id="gastosReportContent">
-      <div class="report-loading"><div class="spinner"></div><span>Cargando gastos...</span></div>
-    </div>
+
   </div>
 </div>
 
 <!-- Supabase -->
-
 <script type="module" src="/src/main.js"></script>
 </body>
 </html>
