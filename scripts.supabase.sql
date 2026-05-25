@@ -178,3 +178,10 @@ FROM public.productos
 ORDER BY cantidad_ventas DESC;
 
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS preferencias jsonb DEFAULT '{}';
+
+
+create policy "usuario puede actualizar sus preferencias"
+on public.usuarios
+for update
+using (auth.uid() = auth_user_id)
+with check (auth.uid() = auth_user_id);

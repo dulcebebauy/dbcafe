@@ -2640,24 +2640,49 @@ function applyTheme(dark) {
 
 async function saveUserPreference(key, value) {
   if (!usuarioActual?.id) return;
+  // Optimistic update local
+  if (!usuarioActual.preferencias) usuarioActual.preferencias = {};
+  usuarioActual.preferencias[key] = value;
   try {
-    await window.supabase_res
+    // Leer las preferencias actuales desde BD, mergear y guardar
+    // Esto evita condiciones de carrera: no pisa otras preferencias guardadas en BD
+    const { data: fresh, error: fetchError } = await window.supabase_res
       .from("usuarios")
-      .update({ preferencias: { ...(usuarioActual.preferencias || {}), [key]: value } })
+      .select("preferencias")
+      .eq("id", usuarioActual.id)
+      .single();
+
+    if (fetchError) {
+      console.error("Error leyendo preferencias:", fetchError.message);
+      return;
+    }
+
+    const merged = { ...(fresh?.preferencias ?? {}), [key]: value };
+    const { error: updateError } = await window.supabase_res
+      .from("usuarios")
+      .update({ preferencias: merged })
       .eq("id", usuarioActual.id);
-    // Actualizar objeto local también
-    if (!usuarioActual.preferencias) usuarioActual.preferencias = {};
-    usuarioActual.preferencias[key] = value;
+
+    if (updateError) {
+      console.error("Error guardando preferencia:", updateError.message);
+    } else {
+      // Confirmar estado local con el merge guardado en BD
+      usuarioActual.preferencias = merged;
+    }
   } catch(e) {
     console.error("Error guardando preferencia:", e);
   }
 }
 
 async function loadUserPreferences() {
-  if (!usuarioActual?.preferencias) return;
-  const prefs = usuarioActual.preferencias;
+  // usuarioActual ya viene cargado con preferencias desde checkSession() o doLogin()
+  // Si preferencias es null/undefined tratar como objeto vacío
+  const prefs = usuarioActual?.preferencias ?? {};
   if (typeof prefs.dark_mode === "boolean") {
     applyTheme(prefs.dark_mode);
+    // Sincronizar el toggle por si el panel ya está montado
+    const toggle = document.getElementById("darkModeToggle");
+    if (toggle) toggle.checked = prefs.dark_mode;
   }
 }
 
