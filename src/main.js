@@ -35,15 +35,12 @@ Object.defineProperty(window, "carrito", {
 /* ═══════════════════════════════════════
    CONFIGURACIÓN
 ═══════════════════════════════════════ */
-const CATEGORY_EMOJI = {
-  bebidas_calientes: "☕",
-  bebidas_frias:     "🍹",
-  dulces:            "🍰",
-  postres:           "🍮",
-  salados:           "🥪",
-  tortas:            "🎂",
-  meriendas:         "🥐"
-};
+// Categorías dinámicas desde Supabase
+let categorias = [];
+
+function getCatMap() {
+  return Object.fromEntries(categorias.map(c => [c.slug, c]));
+}
 
 /* ═══════════════════════════════════════
    REALTIME
@@ -150,6 +147,7 @@ async function doLogin() {
     await initMesas();
     iniciarRealtimeMesas();
     await loadUserPreferences();
+    await cargarCategorias();
     showMesasScreen();
     cargarProductosSupabase();
     // No quitamos loading: la pantalla cambia y el botón desaparece
@@ -234,6 +232,23 @@ const puedeVerReportes  = () => esAdministrador();
 /* ═══════════════════════════════════════
    SUPABASE — ACCESO A DATOS
 ═══════════════════════════════════════ */
+async function cargarCategorias() {
+  try {
+    const { data, error } = await window.supabase_res
+      .from("categorias").select("*").eq("activo", true).order("orden");
+    if (error) {
+      // Si la tabla no existe todavía, solo loguear y seguir — la app funciona sin categorías dinámicas
+      console.warn("Categorías no disponibles (¿migraste la tabla?):", error.message);
+      return;
+    }
+    categorias = data;
+    renderCatChips();
+    renderCatOptions();
+  } catch(e) {
+    console.warn("Error al cargar categorías:", e);
+  }
+}
+
 async function cargarProductosSupabase() {
   const { data, error } = await window.supabase_res
     .from("productos")
@@ -493,7 +508,44 @@ function handleNombreOverlayClick(e) {
    PRODUCTOS
 ═══════════════════════════════════════ */
 function getCategoryEmoji(categoria) {
-  return CATEGORY_EMOJI[categoria] || "";
+  const cat = getCatMap()[categoria];
+  return cat ? cat.emoji : "";
+}
+function getCategoryColor(categoria) {
+  const cat = getCatMap()[categoria];
+  return cat ? cat.color : "#94a3b8";
+}
+function renderCatChips() {
+  document.querySelectorAll(".cat-filter-bar").forEach(bar => {
+    const isAdmin = bar.id === "adminCatFilterBar";
+    bar.innerHTML = "";
+    const todos = document.createElement("button");
+    todos.className = "cat-chip active";
+    if (isAdmin) { todos.dataset.adminCat = "todos"; todos.dataset.action = "setAdminCatFilter"; }
+    else         { todos.dataset.cat = "todos";       todos.dataset.action = "setCatFilter"; }
+    todos.textContent = "Todos";
+    bar.appendChild(todos);
+    categorias.filter(c => c.activo).forEach(c => {
+      const btn = document.createElement("button");
+      btn.className = "cat-chip";
+      if (isAdmin) { btn.dataset.adminCat = c.slug; btn.dataset.action = "setAdminCatFilter"; }
+      else         { btn.dataset.cat = c.slug;       btn.dataset.action = "setCatFilter"; }
+      btn.innerHTML = `<span class="chip-dot" style="background:${c.color}"></span>${c.emoji} ${c.nombre}`;
+      bar.appendChild(btn);
+    });
+  });
+  activeCatFilter = "todos";
+  adminCatFilter  = "todos";
+}
+function renderCatOptions(selectedSlug = "") {
+  const grid = document.getElementById("categoryOptionsGrid");
+  if (!grid) return;
+  grid.innerHTML = "";
+  categorias.filter(c => c.activo).forEach(c => {
+    const label = document.createElement("label");
+    label.innerHTML = `<input type="radio" name="prodCategoria" class="cat-option" value="${c.slug}"${c.slug === selectedSlug ? " checked" : ""}><span class="cat-label"><span class="cat-dot" style="background:${c.color}"></span>${c.nombre}</span>`;
+    grid.appendChild(label);
+  });
 }
 
 function setCatFilter(cat, btn) {
@@ -1252,7 +1304,7 @@ function openProductModal(producto) {
   document.getElementById("prodNombre").value      = producto ? producto.nombre : "";
   document.getElementById("prodDescripcion").value = producto ? (producto.descripcion || "") : "";
   document.getElementById("prodPrecio").value      = producto ? producto.precio : "";
-  document.querySelectorAll(".cat-option").forEach(r => { r.checked = producto ? r.value === producto.categoria : false; });
+  renderCatOptions(producto ? producto.categoria : "");
 
   const mostrarCarta = producto ? (producto.mostrar_carta !== false) : true;
   document.getElementById("prodMostrarCarta").checked = mostrarCarta;
@@ -1776,6 +1828,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     await initMesas();
     iniciarRealtimeMesas();
     await loadUserPreferences();
+    await cargarCategorias();
     showMesasScreen();
     cargarProductosSupabase();
   } else {
@@ -2193,6 +2246,20 @@ document.addEventListener("DOMContentLoaded", () => {
       case "setQuickFilterGastos":   setQuickFilterGastos(qf, el); break;
       // Configuración
       case "closeConfig":            closeConfig();                break;
+      case "toggleCatActivo": {
+        const id     = el.dataset.id;
+        const activo = el.dataset.activo === "true";
+        toggleCategoriaActivo(id, !activo);
+        break;
+      }
+      case "crearCategoria":         crearCategoria();             break;
+      case "toggleCatActivo": {
+        const id     = el.dataset.id;
+        const activo = el.dataset.activo === "true";
+        toggleCategoriaActivo(id, !activo);
+        break;
+      }
+      case "crearCategoria":         crearCategoria();             break;
     }
   });
 
@@ -2612,11 +2679,74 @@ window.addEventListener("load", () => {
    CONFIGURACIÓN
 ═══════════════════════════════════════════════════════════════ */
 
+/* ═══════════════════════════════════════
+   GESTIÓN DE CATEGORÍAS
+═══════════════════════════════════════ */
+async function crearCategoria() {
+  const nombre = document.getElementById("newCatNombre")?.value.trim();
+  const emoji  = document.getElementById("newCatEmoji")?.value.trim() || "";
+  const color  = document.getElementById("newCatColor")?.value || "#94a3b8";
+  if (!nombre) { showToast("Ingresá un nombre.", "error"); return; }
+  const slug = nombre.toLowerCase()
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+  if (categorias.find(c => c.slug === slug)) { showToast("Ya existe una categoría con ese nombre.", "error"); return; }
+  const orden = categorias.length > 0 ? Math.max(...categorias.map(c => c.orden)) + 1 : 1;
+  const btn = document.getElementById("newCatBtn");
+  if (btn) btn.classList.add("loading");
+  const { data, error } = await window.supabase_res
+    .from("categorias").insert({ slug, nombre, emoji, color, orden, activo: true }).select().single();
+  if (btn) btn.classList.remove("loading");
+  if (error) { console.error(error); showToast("Error al crear la categoría.", "error"); return; }
+  categorias.push(data);
+  categorias.sort((a, b) => a.orden - b.orden);
+  renderCatChips(); renderCatOptions(); renderConfigCategorias();
+  document.getElementById("newCatNombre").value = "";
+  document.getElementById("newCatEmoji").value  = "";
+  document.getElementById("newCatColor").value  = "#94a3b8";
+  showToast(`Categoría "${nombre}" creada.`, "success");
+}
+
+async function toggleCategoriaActivo(id, activo) {
+  const { error } = await window.supabase_res.from("categorias").update({ activo }).eq("id", id);
+  if (error) { showToast("Error al actualizar la categoría.", "error"); return; }
+  await cargarCategorias();
+  renderConfigCategorias();
+  showToast(activo ? "Categoría activada." : "Categoría desactivada.", "success");
+}
+
+async function renderConfigCategorias() {
+  const list = document.getElementById("configCatList");
+  if (!list) return;
+  const { data: todas } = await window.supabase_res.from("categorias").select("*").order("orden");
+  if (!todas || todas.length === 0) {
+    list.innerHTML = '<p style="color:var(--muted-fg);font-size:13px;padding:8px 0;">Sin categorías.</p>';
+    return;
+  }
+  list.innerHTML = todas.map(c => `
+    <div class="config-cat-item${c.activo ? "" : " config-cat-inactive"}">
+      <span class="config-cat-dot" style="background:${c.color}"></span>
+      <span class="config-cat-emoji">${c.emoji}</span>
+      <span class="config-cat-nombre">${c.nombre}</span>
+      <button class="config-cat-toggle" data-action="toggleCatActivo" data-id="${c.id}" data-activo="${c.activo}" title="${c.activo ? "Desactivar" : "Activar"}">
+        ${c.activo
+          ? '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>'
+          : '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+        }
+      </button>
+    </div>`).join("");
+}
+
 // ── Panel Configuración ────────────────────────────────────────
 function openConfig() {
-  // Sincronizar toggle con el estado actual
+  const seccionCat = document.getElementById("configSeccionCategorias");
+  if (seccionCat) seccionCat.style.display = usuarioActual?.rol === "administrador" ? "block" : "none";
   const toggle = document.getElementById("darkModeToggle");
   if (toggle) toggle.checked = document.documentElement.getAttribute("data-theme") === "dark";
+  // Cargar lista de categorías solo si la sección es visible (admin) y sin bloquear el panel
+  if (usuarioActual?.rol === "administrador") {
+    renderConfigCategorias().catch(e => console.error("Error cargando categorías en config:", e));
+  }
   document.getElementById("configPanel").classList.add("open");
   if (typeof pushNavState === "function") pushNavState();
 }

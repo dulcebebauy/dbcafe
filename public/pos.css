@@ -1947,3 +1947,35 @@ body {
 }
 
 .modal-delete-btn:hover { background: var(--danger-bg, #fee2e2); }
+
+/* ===== PANEL CONFIG — GESTIÓN DE CATEGORÍAS ===== */
+.config-cat-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 4px;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+  transition: opacity .2s;
+}
+.config-cat-item:last-child { border-bottom: none; }
+.config-cat-inactive { opacity: .45; }
+.config-cat-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.config-cat-emoji { font-size: 16px; width: 22px; text-align: center; flex-shrink: 0; }
+.config-cat-nombre { flex: 1; font-size: 14px; font-weight: 500; color: var(--fg); }
+.config-cat-toggle {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: var(--bg);
+  color: var(--muted-fg);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: background .15s, color .15s;
+}
+.config-cat-toggle:hover { background: var(--border); color: var(--fg); }
+.config-cat-inactive .config-cat-toggle { color: var(--green, #10b981); }
