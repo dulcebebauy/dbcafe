@@ -1470,6 +1470,31 @@ body {
 .summary-card.blue  .summary-value { color: var(--blue); }
 .summary-card.purple .summary-value { color: var(--purple); }
 
+.summary-sub {
+  font-size: 11px;
+  color: var(--muted-fg);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+.summary-rebaja {
+  color: var(--green);
+  font-weight: 700;
+}
+.summary-ley-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+  background: var(--border);
+  color: var(--muted-fg);
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-left: 4px;
+  vertical-align: middle;
+  line-height: 1.6;
+}
+
 .chart-card {
   background: var(--surface);
   border: 1.5px solid var(--border);

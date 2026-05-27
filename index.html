@@ -476,6 +476,13 @@
 }
 .gasto-rubro-select:focus { border-color: var(--primary, #1d4ed8); color: var(--primary, #1d4ed8); }
 .gasto-rubro-select.asignado { background-color: var(--info-bg, #eff6ff); border-color: var(--info-border, #bfdbfe); color: var(--primary, #1d4ed8); }
+.gasto-rubro-select.sin-rubro { background-color: #fef2f2; border-color: #fca5a5; color: #dc2626; animation: shake 0.3s ease; }
+@keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+.gasto-empresa-selector-wrap { display: flex; flex-direction: column; gap: 4px; margin-bottom: 2px; }
+.gasto-empresa-label { font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .04em; }
+.gasto-empresa-select { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1.5px solid #e2e8f0; background: #f8fafc; color: #0f172a; font-size: 14px; font-weight: 600; cursor: pointer; transition: border-color .15s, box-shadow .15s; }
+.gasto-empresa-select:focus { outline: none; border-color: var(--primary, #1d4ed8); box-shadow: 0 0 0 3px rgba(29,78,216,.12); }
+.gasto-empresa-select.sin-rubro { background-color: #fef2f2; border-color: #fca5a5; color: #dc2626; animation: shake 0.3s ease; }
 .gasto-total-row {
   display: flex;
   justify-content: space-between;

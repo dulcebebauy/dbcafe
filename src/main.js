@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { SUPABASE_URL, SUPABASE_KEY, MESAS_CONFIG } from './config.js';
+import { SUPABASE_URL, SUPABASE_KEY, MESAS_CONFIG, EMPRESAS_GASTO, IVA_REBAJA_DEBITO, IVA_REBAJA_CREDITO, IVA_TASA } from './config.js';
 
 // Inicializar Supabase (antes estaba en el <script type="module"> del HTML)
 window.supabase_res = createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -1157,9 +1157,18 @@ function renderReporte() {
   }
 
   const totalVentas  = ventasProductos.reduce((s, v) => s + (parseFloat(v.total) || 0), 0);
-  const totalItems   = ventasProductos.reduce((s, v) => s + (parseInt(v.cantidad) || 0), 0);
   const efectivo     = ventas.filter(v => String(v.metodo).toLowerCase() === "efectivo").reduce((s, v) => s + Math.max(parseFloat(v.total) || 0, 0), 0);
+  const debito       = ventas.filter(v => String(v.metodo).toLowerCase() === "debito").reduce((s, v) => s + Math.max(parseFloat(v.total) || 0, 0), 0);
+  const credito      = ventas.filter(v => String(v.metodo).toLowerCase() === "credito").reduce((s, v) => s + Math.max(parseFloat(v.total) || 0, 0), 0);
   const transacciones = new Set(ventas.map(v => v.fecha + "_" + v.metodo)).size;
+
+  // Rebaja IVA ley inclusión financiera (precios con IVA incluido)
+  // descuento = total × puntos / (100 + tasa_iva)
+  const divisorIVA      = 100 + IVA_TASA;
+  const debitoDescuento  = debito  * IVA_REBAJA_DEBITO  / divisorIVA;
+  const creditoDescuento = credito * IVA_REBAJA_CREDITO / divisorIVA;
+  const debitoNeto       = debito  - debitoDescuento;
+  const creditoNeto      = credito - creditoDescuento;
 
   const prodMap = {};
   ventasProductos.forEach(v => {
@@ -1175,10 +1184,22 @@ function renderReporte() {
 
   content.innerHTML = `
     <div class="summary-grid">
-      <div class="summary-card green"><div class="summary-label">Total vendido</div><div class="summary-value">${fmt(totalVentas)}</div></div>
-      <div class="summary-card"><div class="summary-label">Unidades</div><div class="summary-value">${totalItems.toLocaleString("es-UY")}</div></div>
+      <div class="summary-card green">
+        <div class="summary-label">Total vendido</div>
+        <div class="summary-value">${fmt(efectivo + debitoNeto + creditoNeto)}</div>
+        <div class="summary-sub">cobrado ${fmt(totalVentas)} · <span class="summary-rebaja">−${fmt(debitoDescuento + creditoDescuento)} IVA</span></div>
+      </div>
       <div class="summary-card blue"><div class="summary-label">Efectivo</div><div class="summary-value">${fmt(efectivo)}</div></div>
-      <div class="summary-card purple"><div class="summary-label">Transacciones</div><div class="summary-value">${transacciones}</div></div>
+      <div class="summary-card blue">
+        <div class="summary-label">Débito <span class="summary-ley-badge">Ley 17.934 · ${IVA_REBAJA_DEBITO} pts IVA</span></div>
+        <div class="summary-value">${fmt(debitoNeto)}</div>
+        <div class="summary-sub">cobrado ${fmt(debito)} · <span class="summary-rebaja">−${fmt(debitoDescuento)} IVA</span></div>
+      </div>
+      <div class="summary-card purple">
+        <div class="summary-label">Crédito <span class="summary-ley-badge">Ley 17.934 · ${IVA_REBAJA_CREDITO} pts IVA</span></div>
+        <div class="summary-value">${fmt(creditoNeto)}</div>
+        <div class="summary-sub">cobrado ${fmt(credito)} · <span class="summary-rebaja">−${fmt(creditoDescuento)} IVA</span></div>
+      </div>
     </div>
     <div class="chart-card">
       <h3>Productos más vendidos (por unidades)</h3>
@@ -1467,6 +1488,12 @@ function resetGastosPanel() {
   document.getElementById("gastosJsonError").classList.remove("visible");
   document.getElementById("gastosPreview").style.display = "none";
   document.getElementById("gastosPreviewCard").innerHTML = "";
+  // Restaurar botón Guardar por si quedó en estado loading de un guardado anterior
+  const confirmBtn = document.getElementById("gastosConfirmBtn");
+  if (confirmBtn) {
+    confirmBtn.disabled = false;
+    confirmBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Confirmar y guardar`;
+  }
   switchGastosTab("json");
 }
 
@@ -1508,8 +1535,8 @@ function parsearGastoJson() {
     return;
   }
 
-  // Validaciones mínimas
-  const camposRequeridos = ["empresa", "fecha", "total"];
+  // Validaciones mínimas (empresa puede ser null: se completa en la vista previa)
+  const camposRequeridos = ["fecha", "total"];
   for (const campo of camposRequeridos) {
     if (data[campo] === undefined || data[campo] === null) {
       mostrarErrorGasto(`El JSON no contiene el campo requerido: "${campo}".`);
@@ -1587,7 +1614,16 @@ function renderGastoPreview(d) {
 
   document.getElementById("gastosPreviewCard").innerHTML = `
     <div class="gasto-preview-head">
-      <div class="gasto-preview-empresa">${escHtml(d.empresa || "Sin nombre")}</div>
+      ${d.empresa
+        ? `<div class="gasto-preview-empresa">${escHtml(d.empresa)}</div>`
+        : `<div class="gasto-empresa-selector-wrap">
+             <label class="gasto-empresa-label">Empresa <span style="color:#dc2626">*</span></label>
+             <select id="gastosEmpresaSelect" class="gasto-empresa-select">
+               <option value="">— seleccioná la empresa —</option>
+               ${EMPRESAS_GASTO.map(e => `<option value="${escHtml(e)}">${escHtml(e)}</option>`).join("")}
+             </select>
+           </div>`
+      }
       <div class="gasto-preview-meta">
         ${d.sucursal ? escHtml(d.sucursal) + " · " : ""}
         ${d.tipo_documento || ""} ${d.numero_factura ? "#" + d.numero_factura : ""} · 
@@ -1636,6 +1672,11 @@ function onRubroChange(select) {
   if (!gastoParseado || !Array.isArray(gastoParseado.productos)) return;
   gastoParseado.productos[idx].rubro = select.value || null;
   select.classList.toggle("asignado", !!select.value);
+  select.classList.toggle("sin-rubro", !select.value);
+  // Limpiar error global si ya no quedan rubros pendientes
+  if (select.value && !document.querySelector(".gasto-rubro-select.sin-rubro")) {
+    document.getElementById("gastosJsonError").classList.remove("visible");
+  }
 }
 function escHtml(str) {
   return String(str)
@@ -1647,6 +1688,45 @@ function escHtml(str) {
 
 async function confirmarGasto() {
   if (!gastoParseado) return;
+
+  // Validar empresa si vino null en el JSON (se selecciona en el preview)
+  if (!gastoParseado.empresa) {
+    const sel = document.getElementById("gastosEmpresaSelect");
+    if (!sel || !sel.value) {
+      if (sel) {
+        sel.classList.add("sin-rubro"); // reutiliza el estilo de error rojo
+        void sel.offsetWidth;
+      }
+      mostrarErrorGasto("Seleccioná la empresa antes de guardar.");
+      if (sel) sel.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+    gastoParseado.empresa = sel.value;
+  }
+
+  // Validar que todos los productos tengan rubro seleccionado
+  const productos = Array.isArray(gastoParseado.productos) ? gastoParseado.productos : [];
+  if (productos.length > 0) {
+    const selectsSinRubro = document.querySelectorAll(".gasto-rubro-select");
+    let hayPendientes = false;
+    selectsSinRubro.forEach(sel => {
+      sel.classList.remove("sin-rubro");
+      if (!sel.value) {
+        sel.classList.add("sin-rubro");
+        hayPendientes = true;
+        // Re-trigger animation on repeated attempt
+        void sel.offsetWidth;
+      }
+    });
+    if (hayPendientes) {
+      mostrarErrorGasto("Asigná el rubro a todos los productos antes de guardar.");
+      // Scroll hasta el primer select sin rubro
+      const primero = document.querySelector(".gasto-rubro-select.sin-rubro");
+      if (primero) primero.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+  }
+
   const btn = document.getElementById("gastosConfirmBtn");
   btn.disabled = true;
   btn.innerHTML = `<div class="spinner" style="width:18px;height:18px;border-width:2.5px;border-color:rgba(255,255,255,.3);border-top-color:#fff;"></div> Guardando...`;
@@ -2329,6 +2409,15 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("change", (e) => {
     if (e.target.matches(".gasto-rubro-select")) {
       onRubroChange(e.target);
+    }
+    // Select de empresa cuando viene null en el JSON
+    if (e.target.matches("#gastosEmpresaSelect")) {
+      const sel = e.target;
+      sel.classList.remove("sin-rubro");
+      if (sel.value) {
+        gastoParseado && (gastoParseado.empresa = sel.value);
+        document.getElementById("gastosJsonError").classList.remove("visible");
+      }
     }
     // Select de rubro en formulario manual
     if (e.target.matches("[data-gm-field='rubro']")) {
