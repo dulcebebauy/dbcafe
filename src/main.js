@@ -732,7 +732,7 @@ async function saveCart() {
   }, 120);
 }
 
-function loadCart() {}
+// loadCart: eliminada — el carrito se carga desde Supabase en seleccionarMesa()
 
 /* ═══════════════════════════════════════
    TOTALES Y DRAWER
@@ -820,8 +820,11 @@ function updateDrawerTotal() {
   if (!subtotalEl) return;
 
   const subtotal   = carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
-  const discPct    = parseFloat(document.getElementById("discount")?.value) || 0;
-  const clampedPct = Math.min(Math.max(discPct, 0), 100);
+  let discPct      = parseFloat(document.getElementById("discount")?.value) || 0;
+  // Validar rango: no puede ser negativo ni mayor a 100
+  if (discPct < 0)   { discPct = 0;   const inp = document.getElementById("discount"); if (inp) inp.value = 0; }
+  if (discPct > 100) { discPct = 100; const inp = document.getElementById("discount"); if (inp) inp.value = 100; }
+  const clampedPct = discPct;
   currentDiscount  = subtotal * clampedPct / 100;
   const total      = subtotal - currentDiscount;
 
@@ -2751,11 +2754,17 @@ function navigateBack() {
 
 // ── Listener del botón atrás ───────────────────────────────────
 window.addEventListener("popstate", () => {
-  navigateBack();
-  // Mantener centinela si aún hay capas abiertas
-  if (!["login", "mesas"].includes(getActiveLayer())) {
+  // Reponemos el centinela ANTES de procesar la navegación.
+  // Si lo hacemos después, hay un frame en que el historial queda
+  // con longitud 1 (solo la raíz) y Android puede salir de la app
+  // antes de que pushNavState() lo remedie.
+  // Solo login no necesita centinela: ahí sí queremos que el SO
+  // maneje el atrás (salir o volver al launcher).
+  const layer = getActiveLayer();
+  if (layer !== "login") {
     pushNavState();
   }
+  navigateBack();
 });
 
 // ── Semilla inicial del history ────────────────────────────────
@@ -2763,6 +2772,18 @@ window.addEventListener("load", () => {
   history.replaceState({ pwaNav: true, root: true }, "");
   pushNavState();
 });
+
+/* ── Indicador online / offline ─────────────────────────────── */
+function updateOnlineBadge() {
+  const online = navigator.onLine;
+  ["offlineBadge", "offlineBadgePOS"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = online ? "none" : "";
+  });
+  if (!online) showToast("Sin conexión — verificá la red", "error");
+}
+window.addEventListener("online",  updateOnlineBadge);
+window.addEventListener("offline", updateOnlineBadge);
 
 /* ═══════════════════════════════════════════════════════════════
    CONFIGURACIÓN
