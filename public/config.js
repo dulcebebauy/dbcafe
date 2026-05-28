@@ -39,14 +39,3 @@ export const EMPRESAS_GASTO = [
   "Tata",
   "El Dorado",
 ];
-
-/* ========== REBAJA IVA — LEY INCLUSIÓN FINANCIERA ========== */
-// Puntos de IVA que el comercio devuelve al cliente según la ley.
-// Ley 17.934 (gastronomía): hasta 9 puntos para débito y crédito.
-// Ley 19.210 (general):     2 puntos para débito.
-// Los precios de venta incluyen IVA 22%. El descuento se extrae como:
-//   descuento = total × (puntos / (100 + 22))
-// Cambiá los valores aquí para ajustar si la ley cambia.
-export const IVA_REBAJA_DEBITO  = 9;   // puntos porcentuales
-export const IVA_REBAJA_CREDITO = 9;   // puntos porcentuales
-export const IVA_TASA           = 22;  // tasa básica vigente
