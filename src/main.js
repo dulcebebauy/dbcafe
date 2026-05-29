@@ -311,10 +311,10 @@ async function guardarMesaSupabase(mesa) {
   if (error) console.error(error);
 }
 
-async function guardarVentaSupabase({ mesa, items, subtotal, descuento, total, metodo }) {
+async function guardarVentaSupabase({ mesa, items, subtotal, descuento, total, metodo, pagos }) {
   const { error } = await window.supabase_res
     .from("ventas")
-    .insert({ mesa_id: mesa.id, items, subtotal, descuento, total, metodo_pago: metodo });
+    .insert({ mesa_id: mesa.id, items, subtotal, descuento, total, metodo_pago: metodo, pagos: pagos || null });
 
   if (error) throw error;
 }
@@ -580,7 +580,8 @@ function renderProductos(lista = productos) {
   grid.innerHTML = "";
 
   lista.forEach(p => {
-    const qty   = (carrito.find(i => i.id === p.id) || {}).cantidad || 0;
+    // Suma todas las líneas del mismo producto (independientemente del método de pago)
+    const qty   = carrito.filter(i => i.id === p.id).reduce((s, i) => s + i.cantidad, 0);
     const emoji = getCategoryEmoji(p.categoria);
     const div   = document.createElement("div");
     div.className = "card" + (qty > 0 ? " in-cart" : "");
@@ -649,9 +650,10 @@ function recargarProductos() {
    CARRITO
 ═══════════════════════════════════════ */
 function addToCart(prod) {
-  const item = carrito.find(i => i.id === prod.id);
+  // Agrupa por producto + metodo_pago (efectivo por defecto)
+  const item = carrito.find(i => i.id === prod.id && i.metodo_pago === "efectivo");
   if (item) item.cantidad++;
-  else carrito.push({ id: prod.id, nombre: prod.nombre, precio: prod.precio, cantidad: 1 });
+  else carrito.push({ id: prod.id, nombre: prod.nombre, precio: prod.precio, cantidad: 1, metodo_pago: "efectivo" });
 
   updateTotal();
   if (drawerOpen) renderCartItems();
@@ -660,8 +662,10 @@ function addToCart(prod) {
   navigator.vibrate?.(20);
 }
 
-function changeQty(id, delta) {
-  const idx = carrito.findIndex(i => i.id === id);
+function changeQty(lineKey, delta) {
+  // lineKey = "id:::metodo_pago"
+  const [id, metodo] = lineKey.split(":::");
+  const idx = carrito.findIndex(i => i.id === id && i.metodo_pago === metodo);
   if (idx === -1) return;
   carrito[idx].cantidad += delta;
   if (carrito[idx].cantidad <= 0) carrito.splice(idx, 1);
@@ -671,8 +675,40 @@ function changeQty(id, delta) {
   saveCart();
 }
 
-function removeFromCart(id) {
-  carrito = carrito.filter(i => i.id !== id);
+// Cambiar método de pago de una línea: mueve 1 unidad al nuevo método
+function cambiarMetodoPago(lineKey, nuevoMetodo) {
+  const [id, metodoActual] = lineKey.split(":::");
+  if (metodoActual === nuevoMetodo) return;
+
+  const idxOrigen = carrito.findIndex(i => i.id === id && i.metodo_pago === metodoActual);
+  if (idxOrigen === -1) return;
+
+  // Restar 1 de la línea origen
+  carrito[idxOrigen].cantidad--;
+  if (carrito[idxOrigen].cantidad <= 0) carrito.splice(idxOrigen, 1);
+
+  // Buscar línea destino
+  const idxDestino = carrito.findIndex(i => i.id === id && i.metodo_pago === nuevoMetodo);
+  if (idxDestino !== -1) {
+    carrito[idxDestino].cantidad++;
+  } else {
+    // Encontrar el nombre/precio del producto (desde el item original o del array productos)
+    const prod = productos.find(p => p.id === id);
+    const nombre = prod ? prod.nombre : (carrito.find(i => i.id === id)?.nombre || "");
+    const precio = prod ? prod.precio : (carrito.find(i => i.id === id)?.precio || 0);
+    carrito.push({ id, nombre, precio, cantidad: 1, metodo_pago: nuevoMetodo });
+  }
+
+  updateTotal();
+  renderCartItems();
+  applyFilters();
+  saveCart();
+  navigator.vibrate?.(15);
+}
+
+function removeFromCart(lineKey) {
+  const [id, metodo] = lineKey.split(":::");
+  carrito = carrito.filter(i => !(i.id === id && i.metodo_pago === metodo));
   saveCart();
   updateTotal();
   applyFilters();
@@ -788,26 +824,41 @@ function renderCartItems() {
     return;
   }
 
+  const METODOS = [
+    { key: "efectivo", label: "Efe" },
+    { key: "debito",   label: "Déb" },
+    { key: "credito",  label: "Cré" },
+  ];
+
   cont.innerHTML = "";
   carrito.forEach(item => {
+    const lineKey = `${item.id}:::${item.metodo_pago}`;
     const div = document.createElement("div");
     div.className = "cart-item";
+
+    const chipsHtml = METODOS.map(m => `
+      <button class="mp-chip${item.metodo_pago === m.key ? " active-" + m.key : ""}"
+              data-mp-key="${lineKey}" data-mp-metodo="${m.key}">
+        ${m.label}
+      </button>`).join("");
+
     div.innerHTML = `
       <div class="ci-info">
         <div class="ci-name">${item.nombre}</div>
         <div class="ci-unit">${fmt(item.precio)} c/u</div>
+        <div class="mp-chips">${chipsHtml}</div>
       </div>
       <div class="qty-ctrl">
-        <button class="qty-btn" data-qty-id="${item.id}" data-qty-delta="-1">
+        <button class="qty-btn" data-qty-id="${lineKey}" data-qty-delta="-1">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>
         </button>
         <span class="qty-val">${item.cantidad}</span>
-        <button class="qty-btn" data-qty-id="${item.id}" data-qty-delta="1">
+        <button class="qty-btn" data-qty-id="${lineKey}" data-qty-delta="1">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
         </button>
       </div>
       <div class="ci-total">${fmt(item.precio * item.cantidad)}</div>
-      <button class="ci-remove" data-remove-id="${item.id}">
+      <button class="ci-remove" data-remove-id="${lineKey}">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
       </button>
     `;
@@ -821,7 +872,6 @@ function updateDrawerTotal() {
 
   const subtotal   = carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
   let discPct      = parseFloat(document.getElementById("discount")?.value) || 0;
-  // Validar rango: no puede ser negativo ni mayor a 100
   if (discPct < 0)   { discPct = 0;   const inp = document.getElementById("discount"); if (inp) inp.value = 0; }
   if (discPct > 100) { discPct = 100; const inp = document.getElementById("discount"); if (inp) inp.value = 100; }
   const clampedPct = discPct;
@@ -845,16 +895,41 @@ function updateDrawerTotal() {
     totalEl.textContent = fmt(total);
     totalEl.classList.toggle("active", total > 0);
   }
+
+  // Resumen por método de pago
+  const resumenEl = document.getElementById("pagoResumen");
+  if (resumenEl && carrito.length > 0) {
+    const efe = carrito.filter(i => i.metodo_pago === "efectivo").reduce((s, i) => s + i.precio * i.cantidad, 0);
+    const deb = carrito.filter(i => i.metodo_pago === "debito").reduce((s, i) => s + i.precio * i.cantidad, 0);
+    const cre = carrito.filter(i => i.metodo_pago === "credito").reduce((s, i) => s + i.precio * i.cantidad, 0);
+    const rows = [
+      efe > 0 ? `<div class="pago-resumen-row"><span class="pr-label efe">Efectivo</span><span>${fmt(efe)}</span></div>` : "",
+      deb > 0 ? `<div class="pago-resumen-row"><span class="pr-label deb">Débito</span><span>${fmt(deb)}</span></div>` : "",
+      cre > 0 ? `<div class="pago-resumen-row"><span class="pr-label cre">Crédito</span><span>${fmt(cre)}</span></div>` : "",
+    ].filter(Boolean).join("");
+    resumenEl.innerHTML = rows;
+    resumenEl.style.display = rows ? "block" : "none";
+  } else if (resumenEl) {
+    resumenEl.style.display = "none";
+  }
 }
 
 function updatePayButtons() {
   const disabled = carrito.length === 0 || !puedeCobrar();
 
+  // Botón único cobrar
+  const btnCobrar = document.getElementById("btnCobrar");
+  if (btnCobrar) {
+    btnCobrar.disabled     = disabled;
+    btnCobrar.style.display = puedeCobrar() ? "inline-flex" : "none";
+  }
+
+  // Mantener compatibilidad con los botones individuales si existen
   ["btnEfectivo", "btnDebito", "btnCredito"].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
-    el.disabled     = disabled;
-    el.style.display = puedeCobrar() ? "inline-flex" : "none";
+    el.disabled      = disabled;
+    el.style.display = "none"; // Ocultamos los botones individuales
   });
 
   const clearBtn = document.getElementById("clearBtn");
@@ -947,35 +1022,76 @@ function confirmarPagoEfectivo() {
 }
 
 /* ═══════════════════════════════════════
-   PAGO
+   PAGO — ver cobrarVenta() más abajo
 ═══════════════════════════════════════ */
-async function pagar(metodo) {
+
+function setPayBtnsDisabled(v) {
+  const btnCobrar = document.getElementById("btnCobrar");
+  if (btnCobrar) btnCobrar.disabled = v;
+  // Compatibilidad
+  ["btnEfectivo", "btnDebito", "btnCredito"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = v;
+  });
+}
+
+function showPayLoader(show) {
+  document.getElementById("payLoader").classList.toggle("hidden", !show);
+}
+
+/* ═══════════════════════════════════════
+   COBRO MIXTO
+═══════════════════════════════════════ */
+async function cobrarVenta() {
   if (!puedeCobrar()) { showToast("No tienes permisos", "error"); return; }
   if (carrito.length === 0) return;
 
   const desc  = document.getElementById("discountDesc").value || "Sin descripción";
+
+  // Items con metodo_pago por línea
   const items = carrito.map(i => ({
-    nombre: i.nombre, cantidad: i.cantidad, precio: i.precio,
-    total:  i.precio * i.cantidad, id: i.id, mesa: mesaSeleccionada.nombre
+    nombre:      i.nombre,
+    cantidad:    i.cantidad,
+    precio:      i.precio,
+    subtotal:    i.precio * i.cantidad,
+    total:       i.precio * i.cantidad,
+    id:          i.id,
+    mesa:        mesaSeleccionada.nombre,
+    metodo_pago: i.metodo_pago
   }));
 
   if (currentDiscount > 0) {
-    items.push({ id: "descuento", nombre: "Descuento - " + desc, cantidad: 1,
-      precio: -currentDiscount, total: -currentDiscount, mesa: mesaSeleccionada.nombre });
+    items.push({
+      id: "descuento", nombre: "Descuento - " + desc, cantidad: 1,
+      precio: -currentDiscount, subtotal: -currentDiscount, total: -currentDiscount,
+      mesa: mesaSeleccionada.nombre, metodo_pago: "efectivo"
+    });
   }
 
   const subtotal = carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
   const total    = subtotal - currentDiscount;
 
+  // Resumen de pagos por método
+  const pagos = {
+    efectivo: carrito.filter(i => i.metodo_pago === "efectivo").reduce((s, i) => s + i.precio * i.cantidad, 0),
+    debito:   carrito.filter(i => i.metodo_pago === "debito").reduce((s, i) => s + i.precio * i.cantidad, 0),
+    credito:  carrito.filter(i => i.metodo_pago === "credito").reduce((s, i) => s + i.precio * i.cantidad, 0),
+  };
+  // Aplicar descuento proporcional al efectivo (simplificado)
+  if (currentDiscount > 0) pagos.efectivo = Math.max(0, pagos.efectivo - currentDiscount);
+
+  // Determinar metodo_pago principal (el de mayor monto)
+  const metodoPrincipal = Object.entries(pagos).reduce((a, b) => b[1] > a[1] ? b : a)[0];
+
   showPayLoader(true);
   setPayBtnsDisabled(true);
 
   try {
-    await guardarVentaSupabase({ mesa: mesaSeleccionada, items, subtotal, descuento: currentDiscount, total, metodo });
+    await guardarVentaSupabase({ mesa: mesaSeleccionada, items, subtotal, descuento: currentDiscount, total, metodo: metodoPrincipal, pagos });
 
     const { error: errMesa } = await window.supabase_res
       .from("mesas")
-      .update({ carrito: [], subtotal: 0, descuento: 0, total: 0, metodo_pago: metodo, mesa_cerrada: true, fecha_cierre: new Date().toISOString() })
+      .update({ carrito: [], subtotal: 0, descuento: 0, total: 0, metodo_pago: metodoPrincipal, mesa_cerrada: true, fecha_cierre: new Date().toISOString() })
       .eq("id", mesaSeleccionada.id);
 
     if (errMesa) throw errMesa;
@@ -992,7 +1108,7 @@ async function pagar(metodo) {
     updateTotal();
     applyFilters();
     closeDrawer();
-    showToast("Pago procesado (" + metodo + ")", "success");
+    showToast("Pago procesado", "success");
     playSuccessSound();
     setTimeout(() => volverAMesas(), 900);
   } catch (err) {
@@ -1004,14 +1120,11 @@ async function pagar(metodo) {
   }
 }
 
-function showPayLoader(show) {
-  document.getElementById("payLoader").classList.toggle("hidden", !show);
-}
-
-function setPayBtnsDisabled(v) {
-  ["btnEfectivo", "btnDebito", "btnCredito"].forEach(id => {
-    document.getElementById(id).disabled = v;
-  });
+// Mantener pagar() como alias para compatibilidad con la calculadora de cambio
+async function pagar(metodo) {
+  // Reasignar todo el carrito al método indicado antes de cobrar
+  carrito.forEach(i => { i.metodo_pago = metodo; });
+  await cobrarVenta();
 }
 
 /* ═══════════════════════════════════════
@@ -2283,6 +2396,7 @@ document.addEventListener("DOMContentLoaded", () => {
       case "closeDrawer":            closeDrawer();                 break;
       case "abrirCambio":            abrirCambio(arg);              break;
       case "pagar":                  pagar(arg);                    break;
+      case "cobrarVenta":            cobrarVenta();                 break;
       case "clearCart":              clearCart();                   break;
 
       // Modal cambio efectivo
@@ -2364,6 +2478,13 @@ document.addEventListener("DOMContentLoaded", () => {
   // changeQty, removeFromCart → botones con data-qty-id / data-remove-id
   // Se usan data-* en las funciones que generan el HTML dinámico (ver abajo).
   document.addEventListener("click", (e) => {
+
+    // cambiarMetodoPago: chips de método generados con data-mp-key y data-mp-metodo
+    const mpChip = e.target.closest("[data-mp-key]");
+    if (mpChip) {
+      cambiarMetodoPago(mpChip.dataset.mpKey, mpChip.dataset.mpMetodo);
+      return;
+    }
 
     // changeQty: botones generados con data-qty-id y data-qty-delta
     const qtyBtn = e.target.closest("[data-qty-id]");

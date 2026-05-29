@@ -1052,12 +1052,19 @@
         </div>
         <div class="totals-row total-final"><span>Total</span><span id="cartTotal">$0</span></div>
       </div>
-      <div class="pay-row">
-        <button class="pay-btn cash"   data-action="abrirCambio" data-arg="efectivo" id="btnEfectivo" disabled>Efectivo</button>
-        <button class="pay-btn debit"  data-action="pagar" data-arg="debito"         id="btnDebito"   disabled>Débito</button>
-        <button class="pay-btn credit" data-action="pagar" data-arg="credito"        id="btnCredito"  disabled>Crédito</button>
+      <div id="pagoResumen" class="pago-resumen" style="display:none"></div>
+      <div class="cart-actions-row">
+        <div class="pay-row" style="flex:1">
+          <button class="pay-btn cobrar" data-action="cobrarVenta" id="btnCobrar" disabled>
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            Cobrar
+          </button>
+          <button class="pay-btn cash"   data-action="abrirCambio" data-arg="efectivo" id="btnEfectivo" disabled style="display:none">Efectivo</button>
+          <button class="pay-btn debit"  data-action="pagar" data-arg="debito"         id="btnDebito"   disabled style="display:none">Débito</button>
+          <button class="pay-btn credit" data-action="pagar" data-arg="credito"        id="btnCredito"  disabled style="display:none">Crédito</button>
+        </div>
+        <button class="clear-btn" id="clearBtn" data-action="clearCart" disabled>Vaciar</button>
       </div>
-      <button class="clear-btn" id="clearBtn" data-action="clearCart" disabled>Vaciar carrito</button>
     </div>
   </div>
 
@@ -1496,12 +1503,19 @@
         </div>
         <div class="totals-row total-final"><span>Total</span><span id="cartTotal">$0</span></div>
       </div>
-      <div class="pay-row">
-        <button class="pay-btn cash"   data-action="abrirCambio" data-arg="efectivo" id="btnEfectivo" disabled>Efectivo</button>
-        <button class="pay-btn debit"  data-action="pagar" data-arg="debito"         id="btnDebito"   disabled>Débito</button>
-        <button class="pay-btn credit" data-action="pagar" data-arg="credito"        id="btnCredito"  disabled>Crédito</button>
+      <div id="pagoResumen" class="pago-resumen" style="display:none"></div>
+      <div class="cart-actions-row">
+        <div class="pay-row" style="flex:1">
+          <button class="pay-btn cobrar" data-action="cobrarVenta" id="btnCobrar" disabled>
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            Cobrar
+          </button>
+          <button class="pay-btn cash"   data-action="abrirCambio" data-arg="efectivo" id="btnEfectivo" disabled style="display:none">Efectivo</button>
+          <button class="pay-btn debit"  data-action="pagar" data-arg="debito"         id="btnDebito"   disabled style="display:none">Débito</button>
+          <button class="pay-btn credit" data-action="pagar" data-arg="credito"        id="btnCredito"  disabled style="display:none">Crédito</button>
+        </div>
+        <button class="clear-btn" id="clearBtn" data-action="clearCart" disabled>Vaciar</button>
       </div>
-      <button class="clear-btn" id="clearBtn" data-action="clearCart" disabled>Vaciar carrito</button>
     </div>
   </div>
 

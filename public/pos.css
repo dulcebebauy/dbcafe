@@ -849,11 +849,11 @@ body {
 .drawer-footer {
   flex-shrink: 0;
   border-top: 1px solid var(--border);
-  padding: 14px 16px;
+  padding: 10px 14px;
   background: var(--muted);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 7px;
 }
 
 .discount-row {
@@ -862,12 +862,12 @@ body {
 }
 
 .discount-row input {
-  height: 40px;
+  height: 34px;
   border: 1.5px solid var(--border);
   border-radius: 8px;
   font-family: inherit;
-  font-size: 14px;
-  padding: 0 10px;
+  font-size: 13px;
+  padding: 0 9px;
   background: var(--surface);
   color: var(--fg);
   outline: none;
@@ -886,8 +886,8 @@ body {
 .totals {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  padding: 10px 12px;
+  gap: 2px;
+  padding: 7px 10px;
   background: var(--surface);
   border-radius: 10px;
   border: 1px solid var(--border);
@@ -897,7 +897,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--muted-fg);
 }
 
@@ -909,11 +909,11 @@ body {
 .totals-row.discount { color: var(--red); font-weight: 500; }
 
 .totals-row.total-final {
-  font-size: 20px;
+  font-size: 17px;
   font-weight: 800;
   color: var(--fg);
-  padding-top: 8px;
-  margin-top: 4px;
+  padding-top: 5px;
+  margin-top: 3px;
   border-top: 1.5px solid var(--border);
 }
 
@@ -975,21 +975,29 @@ body {
 .pay-btn.credit { background: var(--purple); }
 
 .clear-btn {
-  width: 100%;
   height: 40px;
-  border: none;
-  border-radius: 8px;
+  border: 1.5px solid var(--red, #ef4444);
+  border-radius: 10px;
   background: none;
   color: var(--red);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
   transition: background 0.15s;
+  padding: 0 14px;
+  white-space: nowrap;
 }
 
 .clear-btn:hover { background: var(--danger-bg, #fee2e2); }
 .clear-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Fila de acciones: Cobrar + Vaciar juntos */
+.cart-actions-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
 
 /* ===== CALCULADORA DE VUELTO ===== */
 .cambio-modal-overlay {
@@ -2004,3 +2012,102 @@ body {
 }
 .config-cat-toggle:hover { background: var(--border); color: var(--fg); }
 .config-cat-inactive .config-cat-toggle { color: var(--green, #10b981); }
+
+/* ═══════════════════════════════════════
+   PAGOS MIXTOS — chips de método
+═══════════════════════════════════════ */
+.mp-chips {
+  display: flex;
+  gap: 4px;
+  margin-top: 5px;
+  flex-wrap: wrap;
+}
+
+.mp-chip {
+  padding: 2px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .3px;
+  cursor: pointer;
+  border: 1.5px solid var(--border);
+  background: var(--bg);
+  color: var(--muted-fg);
+  transition: background .12s, color .12s, border-color .12s;
+  line-height: 1.6;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.mp-chip:active { opacity: .75; }
+
+/* Activo por método */
+.mp-chip.active-efectivo {
+  background: #166534;
+  color: #fff;
+  border-color: #166534;
+}
+.mp-chip.active-debito {
+  background: #1d4ed8;
+  color: #fff;
+  border-color: #1d4ed8;
+}
+.mp-chip.active-credito {
+  background: #6d28d9;
+  color: #fff;
+  border-color: #6d28d9;
+}
+
+/* Hover estados inactivos */
+.mp-chip:not([class*="active-"]):hover {
+  background: var(--border);
+  color: var(--fg);
+}
+
+/* Botón único Cobrar */
+.pay-btn.cobrar {
+  flex: 1;
+  background: #059669;
+  color: #fff;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: .2px;
+  border-radius: 10px;
+  padding: 10px 16px;
+  height: 40px;
+  transition: background .15s, opacity .15s;
+}
+.pay-btn.cobrar:hover:not(:disabled) { background: #047857; }
+.pay-btn.cobrar:disabled { opacity: .45; cursor: not-allowed; }
+
+/* Resumen de pagos por método */
+.pago-resumen {
+  margin: 2px 0 0;
+  border-radius: 8px;
+  background: var(--surface, #f8fafc);
+  border: 1px solid var(--border);
+  padding: 5px 10px;
+  font-size: 12px;
+}
+.pago-resumen-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2px 0;
+  font-weight: 600;
+}
+.pr-label {
+  padding: 1px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .2px;
+}
+.pr-label.efe { background: #dcfce7; color: #166534; }
+.pr-label.deb { background: #dbeafe; color: #1d4ed8; }
+.pr-label.cre { background: #ede9fe; color: #6d28d9; }
+
+[data-theme="dark"] .pago-resumen { background: var(--surface); }
+[data-theme="dark"] .pr-label.efe { background: #14532d; color: #86efac; }
+[data-theme="dark"] .pr-label.deb { background: #1e3a5f; color: #93c5fd; }
+[data-theme="dark"] .pr-label.cre { background: #3b1f6b; color: #c4b5fd; }
