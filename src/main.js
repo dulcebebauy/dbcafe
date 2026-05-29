@@ -925,13 +925,21 @@ function updateDrawerTotal() {
   // Resumen por método de pago
   const resumenEl = document.getElementById("pagoResumen");
   if (resumenEl && carrito.length > 0) {
-    const efe = carrito.filter(i => i.metodo_pago === "efectivo").reduce((s, i) => s + i.precio * i.cantidad, 0);
-    const deb = carrito.filter(i => i.metodo_pago === "debito").reduce((s, i) => s + i.precio * i.cantidad, 0);
-    const cre = carrito.filter(i => i.metodo_pago === "credito").reduce((s, i) => s + i.precio * i.cantidad, 0);
+    const calc = (metodo) => ({
+      monto: carrito.filter(i => i.metodo_pago === metodo).reduce((s, i) => s + i.precio * i.cantidad, 0),
+      qty:   carrito.filter(i => i.metodo_pago === metodo).reduce((s, i) => s + i.cantidad, 0),
+    });
+    const efe = calc("efectivo");
+    const deb = calc("debito");
+    const cre = calc("credito");
+    const fila = ({ monto, qty }, cls, label) =>
+      monto > 0
+        ? `<div class="pago-resumen-row"><span class="pr-label ${cls}">${label}</span><span class="pr-qty">${qty} prod.</span><span>${fmt(monto)}</span></div>`
+        : "";
     const rows = [
-      efe > 0 ? `<div class="pago-resumen-row"><span class="pr-label efe">Efectivo</span><span>${fmt(efe)}</span></div>` : "",
-      deb > 0 ? `<div class="pago-resumen-row"><span class="pr-label deb">Débito</span><span>${fmt(deb)}</span></div>` : "",
-      cre > 0 ? `<div class="pago-resumen-row"><span class="pr-label cre">Crédito</span><span>${fmt(cre)}</span></div>` : "",
+      fila(efe, "efe", "Efectivo"),
+      fila(deb, "deb", "Débito"),
+      fila(cre, "cre", "Crédito"),
     ].filter(Boolean).join("");
     resumenEl.innerHTML = rows;
     resumenEl.style.display = rows ? "block" : "none";
@@ -3072,4 +3080,3 @@ async function loadUserPreferences() {
     if (toggle) toggle.checked = prefs.dark_mode;
   }
 }
-
