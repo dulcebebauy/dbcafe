@@ -767,6 +767,49 @@ body {
   margin-bottom: 6px;
 }
 
+/* Agrupación de líneas del mismo producto */
+.cart-group {
+  margin-bottom: 6px;
+}
+
+.cart-group .cart-item {
+  margin-bottom: 0;
+  border-radius: 0;
+}
+
+/* Primera línea del grupo */
+.cart-group .cart-item:first-child {
+  border-radius: 10px 10px 0 0;
+}
+
+/* Última línea del grupo */
+.cart-group .cart-item:last-child {
+  border-radius: 0 0 10px 10px;
+}
+
+/* Grupo con una sola línea: redondo completo */
+.cart-group .cart-item:only-child {
+  border-radius: 10px;
+}
+
+/* Separador entre sub-líneas del mismo producto */
+.cart-group .cart-item--subline {
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+
+/* Nombre en sub-línea (solo muestra método, no repite nombre) */
+.ci-name--sub {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted-fg);
+}
+
+.ci-unit-inline {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+}
+
 .ci-info { flex: 1; min-width: 0; }
 
 .ci-name {

@@ -831,38 +831,64 @@ function renderCartItems() {
   ];
 
   cont.innerHTML = "";
+
+  // Agrupar líneas por producto (mismo id), respetando el orden de primera aparición
+  const ordenIds = [];
+  const grupos = {};
   carrito.forEach(item => {
-    const lineKey = `${item.id}:::${item.metodo_pago}`;
-    const div = document.createElement("div");
-    div.className = "cart-item";
+    if (!grupos[item.id]) {
+      grupos[item.id] = { nombre: item.nombre, precio: item.precio, lineas: [] };
+      ordenIds.push(item.id);
+    }
+    grupos[item.id].lineas.push(item);
+  });
 
-    const chipsHtml = METODOS.map(m => `
-      <button class="mp-chip${item.metodo_pago === m.key ? " active-" + m.key : ""}"
-              data-mp-key="${lineKey}" data-mp-metodo="${m.key}">
-        ${m.label}
-      </button>`).join("");
+  ordenIds.forEach(prodId => {
+    const grupo = grupos[prodId];
+    const wrapper = document.createElement("div");
+    wrapper.className = "cart-group";
 
-    div.innerHTML = `
-      <div class="ci-info">
-        <div class="ci-name">${item.nombre}</div>
-        <div class="ci-unit">${fmt(item.precio)} c/u</div>
-        <div class="mp-chips">${chipsHtml}</div>
-      </div>
-      <div class="qty-ctrl">
-        <button class="qty-btn" data-qty-id="${lineKey}" data-qty-delta="-1">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>
+    grupo.lineas.forEach((item, idx) => {
+      const lineKey = `${item.id}:::${item.metodo_pago}`;
+      const esUnica = grupo.lineas.length === 1;
+      const div = document.createElement("div");
+      div.className = "cart-item" + (idx > 0 ? " cart-item--subline" : "");
+
+      const chipsHtml = METODOS.map(m => `
+        <button class="mp-chip${item.metodo_pago === m.key ? " active-" + m.key : ""}"
+                data-mp-key="${lineKey}" data-mp-metodo="${m.key}">
+          ${m.label}
+        </button>`).join("");
+
+      // Solo la primera línea del grupo muestra nombre y precio unitario
+      const infoHtml = idx === 0
+        ? `<div class="ci-name">${item.nombre}</div>
+           <div class="ci-unit">${fmt(item.precio)} c/u</div>`
+        : `<div class="ci-name ci-name--sub">↳ <span class="ci-unit-inline">${fmt(item.precio)} c/u</span></div>`;
+
+      div.innerHTML = `
+        <div class="ci-info">
+          ${infoHtml}
+          <div class="mp-chips">${chipsHtml}</div>
+        </div>
+        <div class="qty-ctrl">
+          <button class="qty-btn" data-qty-id="${lineKey}" data-qty-delta="-1">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>
+          </button>
+          <span class="qty-val">${item.cantidad}</span>
+          <button class="qty-btn" data-qty-id="${lineKey}" data-qty-delta="1">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+          </button>
+        </div>
+        <div class="ci-total">${fmt(item.precio * item.cantidad)}</div>
+        <button class="ci-remove" data-remove-id="${lineKey}">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
         </button>
-        <span class="qty-val">${item.cantidad}</span>
-        <button class="qty-btn" data-qty-id="${lineKey}" data-qty-delta="1">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-        </button>
-      </div>
-      <div class="ci-total">${fmt(item.precio * item.cantidad)}</div>
-      <button class="ci-remove" data-remove-id="${lineKey}">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-      </button>
-    `;
-    cont.appendChild(div);
+      `;
+      wrapper.appendChild(div);
+    });
+
+    cont.appendChild(wrapper);
   });
 }
 
