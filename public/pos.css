@@ -1,3 +1,4 @@
+
 /* ===== RESET & BASE ===== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -983,7 +984,7 @@ body {
 }
 */
 .pay-row {
-  display: grid;
+  display: flex;/*grid;*/
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 7px;
 }
@@ -1018,17 +1019,18 @@ body {
 
 .clear-btn {
   height: 40px;
+  width: 40px;
+  flex-shrink: 0;
   border: 1.5px solid var(--red, #ef4444);
   border-radius: 10px;
   background: none;
   color: var(--red);
-  font-size: 13px;
-  font-weight: 600;
-  font-family: inherit;
   cursor: pointer;
   transition: background 0.15s;
-  padding: 0 14px;
-  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
 }
 
 .clear-btn:hover { background: var(--danger-bg, #fee2e2); }
@@ -1039,6 +1041,11 @@ body {
   display: flex;
   gap: 8px;
   align-items: center;
+}
+
+.cart-actions-row .pay-row {
+  flex: 1;
+  min-width: 0;
 }
 
 /* ===== CALCULADORA DE VUELTO ===== */
