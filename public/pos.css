@@ -769,8 +769,18 @@ body {
 
 /* Agrupación de líneas del mismo producto */
 .cart-group {
-  margin-bottom: 6px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  overflow: hidden;
+  border-left: 3px solid var(--border);
+  transition: border-color 0.15s;
 }
+
+/* Acento de color según método de pago dominante — se setea por JS */
+.cart-group[data-metodo="efectivo"] { border-left-color: #16a34a; }
+.cart-group[data-metodo="debito"]   { border-left-color: #2563eb; }
+.cart-group[data-metodo="credito"]  { border-left-color: #7c3aed; }
+.cart-group[data-metodo="mixto"]    { border-left-color: #d97706; }
 
 .cart-group .cart-item {
   margin-bottom: 0;
@@ -779,17 +789,17 @@ body {
 
 /* Primera línea del grupo */
 .cart-group .cart-item:first-child {
-  border-radius: 10px 10px 0 0;
+  border-radius: 0;
 }
 
 /* Última línea del grupo */
 .cart-group .cart-item:last-child {
-  border-radius: 0 0 10px 10px;
+  border-radius: 0;
 }
 
-/* Grupo con una sola línea: redondo completo */
+/* Grupo con una sola línea */
 .cart-group .cart-item:only-child {
-  border-radius: 10px;
+  border-radius: 0;
 }
 
 /* Separador entre sub-líneas del mismo producto */
@@ -984,7 +994,7 @@ body {
 }
 */
 .pay-row {
-  display: flex;/*grid;*/
+  display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 7px;
 }

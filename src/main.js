@@ -848,6 +848,11 @@ function renderCartItems() {
     const wrapper = document.createElement("div");
     wrapper.className = "cart-group";
 
+    // Determinar método dominante para el acento de color
+    const metodos = grupo.lineas.map(l => l.metodo_pago);
+    const metodoUnico = metodos.every(m => m === metodos[0]) ? metodos[0] : "mixto";
+    wrapper.dataset.metodo = metodoUnico;
+
     grupo.lineas.forEach((item, idx) => {
       const lineKey = `${item.id}:::${item.metodo_pago}`;
       const esUnica = grupo.lineas.length === 1;
@@ -3080,3 +3085,4 @@ async function loadUserPreferences() {
     if (toggle) toggle.checked = prefs.dark_mode;
   }
 }
+
