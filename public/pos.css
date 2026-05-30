@@ -967,7 +967,7 @@ body {
   color: var(--fg);
   padding-top: 5px;
   margin-top: 3px;
-  border-top: 1.5px solid var(--border);
+  /*border-top: 1.5px solid var(--border);*/
 }
 
 .totals-row.total-final span:last-child {
