@@ -1242,7 +1242,11 @@ async function cargarVentas() {
         ventasCache.push({
           fecha: venta.created_at, metodo: venta.metodo_pago,
           nombre: item.nombre, cantidad: item.cantidad,
-          precio: item.precio, total: item.total, mesa: item.mesa || ""
+          precio: item.precio, total: item.total, mesa: item.mesa || "",
+          // columna nueva: desglose por método de pago de toda la venta
+          pagos: venta.pagos || null,
+          ventaTotal: venta.total,
+          ventaId: venta.id || (venta.created_at + venta.metodo_pago),
         });
       });
     });
@@ -1312,10 +1316,32 @@ function renderReporte() {
   }
 
   const totalVentas  = ventasProductos.reduce((s, v) => s + (parseFloat(v.total) || 0), 0);
-  const efectivo     = ventas.filter(v => String(v.metodo).toLowerCase() === "efectivo").reduce((s, v) => s + Math.max(parseFloat(v.total) || 0, 0), 0);
-  const debito       = ventas.filter(v => String(v.metodo).toLowerCase() === "debito").reduce((s, v) => s + Math.max(parseFloat(v.total) || 0, 0), 0);
-  const credito      = ventas.filter(v => String(v.metodo).toLowerCase() === "credito").reduce((s, v) => s + Math.max(parseFloat(v.total) || 0, 0), 0);
-  const transacciones = new Set(ventas.map(v => v.fecha + "_" + v.metodo)).size;
+
+  // Agrupar por venta única para no sumar pagos múltiples veces (una venta = N items)
+  const ventasUnicas = new Map();
+  ventas.forEach(v => {
+    if (!ventasUnicas.has(v.ventaId)) ventasUnicas.set(v.ventaId, v);
+  });
+
+  let efectivo = 0, debito = 0, credito = 0;
+  ventasUnicas.forEach(v => {
+    if (v.pagos && typeof v.pagos === "object") {
+      // Venta nueva: usar desglose real por método
+      efectivo += Math.max(parseFloat(v.pagos.efectivo) || 0, 0);
+      debito   += Math.max(parseFloat(v.pagos.debito)   || 0, 0);
+      credito  += Math.max(parseFloat(v.pagos.credito)  || 0, 0);
+    } else {
+      // Venta vieja: todo al método único registrado
+      const monto = Math.max(parseFloat(v.ventaTotal) || 0, 0);
+      const m = String(v.metodo || "").toLowerCase();
+      if (m === "efectivo")     efectivo += monto;
+      else if (m === "debito")  debito   += monto;
+      else if (m === "credito") credito  += monto;
+      else                      efectivo += monto; // fallback
+    }
+  });
+
+  const transacciones = ventasUnicas.size;
 
   // Rebaja IVA ley inclusión financiera (precios con IVA incluido)
   // descuento = total × puntos / (100 + tasa_iva)
@@ -1361,7 +1387,7 @@ function renderReporte() {
       <div class="chart-wrap"><canvas id="reportChartCanvas"></canvas></div>
     </div>
     <div class="table-card">
-      <h3>Ventas agrupadas (${transacciones} transacciones)</h3>
+      <h3>Ventas agrupadas (${ventasUnicas.size} transacciones)</h3>
       <div id="ventasGrupoContainer"></div>
     </div>
   `;
@@ -1385,8 +1411,8 @@ function renderVentasAgrupadas(ventas) {
     const fechaStr = fecha
       ? fecha.toLocaleDateString("es-UY", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
       : (v.fecha || "?");
-    const clave = v.fecha + "___" + v.metodo;
-    if (!grupos[clave]) grupos[clave] = { fechaStr, fecha: v.fecha, metodo: v.metodo, items: [], total: 0 };
+    const clave = v.ventaId || (v.fecha + "___" + v.metodo);
+    if (!grupos[clave]) grupos[clave] = { fechaStr, fecha: v.fecha, metodo: v.metodo, pagos: v.pagos || null, ventaTotal: v.ventaTotal, items: [], total: 0 };
     grupos[clave].items.push(v);
     grupos[clave].total += parseFloat(v.total) || 0;
   });
@@ -1398,7 +1424,22 @@ function renderVentasAgrupadas(ventas) {
   const visible = gruposArr.slice(0, 100);
   container.innerHTML = visible.map((g, idx) => {
     const metodo     = String(g.metodo || "").toLowerCase();
-    const badgeClass = metodo === "efectivo" ? "badge-efectivo" : metodo === "debito" ? "badge-debito" : metodo === "credito" ? "badge-credito" : "";
+    const esMixto    = g.pagos && typeof g.pagos === "object" &&
+                       [g.pagos.efectivo, g.pagos.debito, g.pagos.credito].filter(x => parseFloat(x) > 0).length > 1;
+
+    // Badge de método: si es mixto mostrar los tres métodos activos
+    let badgeHtml;
+    if (esMixto) {
+      const partes = [];
+      if (parseFloat(g.pagos.efectivo) > 0) partes.push(`<span class="badge-metodo badge-efectivo">Efe ${fmt(g.pagos.efectivo)}</span>`);
+      if (parseFloat(g.pagos.debito)   > 0) partes.push(`<span class="badge-metodo badge-debito">Déb ${fmt(g.pagos.debito)}</span>`);
+      if (parseFloat(g.pagos.credito)  > 0) partes.push(`<span class="badge-metodo badge-credito">Cré ${fmt(g.pagos.credito)}</span>`);
+      badgeHtml = partes.join(" ");
+    } else {
+      const badgeClass = metodo === "efectivo" ? "badge-efectivo" : metodo === "debito" ? "badge-debito" : metodo === "credito" ? "badge-credito" : "";
+      badgeHtml = `<span class="badge-metodo ${badgeClass}">${g.metodo || "-"}</span>`;
+    }
+
     const itemsHtml  = g.items.map(v => {
       const esDescuento = String(v.nombre).toLowerCase().startsWith("descuento");
       return `<div class="venta-item-row${esDescuento ? " descuento" : ""}">
@@ -1412,7 +1453,7 @@ function renderVentasAgrupadas(ventas) {
       <div class="venta-grupo-header" data-grupo-idx="${idx}">
         <div class="venta-grupo-left">
           <div class="venta-grupo-fecha">${g.fechaStr}</div>
-          <div class="venta-grupo-meta">${g.items.length} producto${g.items.length !== 1 ? "s" : ""} · <span class="badge-metodo ${badgeClass}">${g.metodo || "-"}</span></div>
+          <div class="venta-grupo-meta">${g.items.length} producto${g.items.length !== 1 ? "s" : ""} · ${badgeHtml}</div>
         </div>
         <div class="venta-grupo-right">
           <span class="venta-grupo-total">${fmt(g.total)}</span>
@@ -1430,7 +1471,7 @@ function toggleGrupo(idx) {
 
 function updateSubtitle(ventas, desde, hasta) {
   const sub = document.getElementById("reportSubtitle");
-  const transacciones = new Set(ventas.map(v => v.fecha + "_" + v.metodo)).size;
+  const transacciones = new Set(ventas.map(v => v.ventaId)).size;
   if (!desde && !hasta)       sub.textContent = `${transacciones} transacciones en total`;
   else if (desde && hasta)    sub.textContent = `${desde} — ${hasta} · ${transacciones} transacciones`;
   else if (desde)             sub.textContent = `Desde ${desde} · ${transacciones} transacciones`;
