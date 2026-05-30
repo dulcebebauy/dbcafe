@@ -2188,3 +2188,123 @@ body {
 [data-theme="dark"] .pr-label.efe { background: #14532d; color: #86efac; }
 [data-theme="dark"] .pr-label.deb { background: #1e3a5f; color: #93c5fd; }
 [data-theme="dark"] .pr-label.cre { background: #3b1f6b; color: #c4b5fd; }
+
+/* Cobro por monto dentro del carrito */
+.pago-resumen-titulo {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--muted-fg);
+  margin: 2px 0 4px;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+}
+.pago-monto-box {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.pago-monto-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.pago-monto-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted-fg);
+}
+.pago-monto-input {
+  width: 100%;
+  height: 34px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg, #fff);
+  color: var(--fg, #0f172a);
+  padding: 0 7px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.pago-monto-estado {
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted-fg);
+}
+.pago-monto-estado.ok { color: #047857; }
+.pago-monto-estado.warn { color: #b45309; }
+.pago-monto-estado.error { color: #dc2626; }
+.pago-monto-limpiar {
+  margin-top: 6px;
+  border: 0;
+  background: transparent;
+  color: var(--primary, #2563eb);
+  font-size: 11px;
+  font-weight: 800;
+  padding: 0;
+  cursor: pointer;
+}
+
+/* Modo de cobro compacto */
+.modo-cobro-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+.modo-cobro-title {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--muted-fg);
+  text-transform: uppercase;
+  letter-spacing: .3px;
+  white-space: nowrap;
+}
+.modo-cobro-toggle {
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg, #fff);
+}
+.modo-cobro-btn {
+  border: 0;
+  background: transparent;
+  color: var(--muted-fg);
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.modo-cobro-btn.active {
+  background: var(--primary, #2563eb);
+  color: #fff;
+}
+.pago-resumen-compact .pago-resumen-row {
+  padding: 1px 0;
+}
+.mp-chips-placeholder {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: var(--muted-fg);
+  font-size: 11px;
+  font-weight: 800;
+}
+.pago-monto-box.is-open {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 0;
+}
+@media (max-width: 420px) {
+  .modo-cobro-bar { align-items: flex-start; flex-direction: column; gap: 4px; }
+  .modo-cobro-toggle { width: 100%; }
+  .modo-cobro-btn { flex: 1; }
+}

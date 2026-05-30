@@ -25,6 +25,8 @@ let mesaEditando      = null;
 let cambioMetodo      = "efectivo";
 let activeCatFilter   = "todos";
 let adminCatFilter    = "todos";
+let pagosPorMonto     = { efectivo: "", debito: "", credito: "" };
+let modoCobro         = "producto";
 
 Object.defineProperty(window, "carrito", {
   get() { return mesaSeleccionada ? mesaSeleccionada.carrito : []; },
@@ -721,6 +723,8 @@ function clearCart() {
   document.getElementById("discount").value     = "";
   document.getElementById("discountDesc").value = "";
   currentDiscount = 0;
+  pagosPorMonto = { efectivo: "", debito: "", credito: "" };
+  modoCobro = "producto";
   saveCart();
   updateTotal();
   applyFilters();
@@ -859,11 +863,11 @@ function renderCartItems() {
       const div = document.createElement("div");
       div.className = "cart-item" + (idx > 0 ? " cart-item--subline" : "");
 
-      const chipsHtml = METODOS.map(m => `
+      const chipsHtml = modoCobro === "producto" ? METODOS.map(m => `
         <button class="mp-chip${item.metodo_pago === m.key ? " active-" + m.key : ""}"
                 data-mp-key="${lineKey}" data-mp-metodo="${m.key}">
           ${m.label}
-        </button>`).join("");
+        </button>`).join("") : `<div class="mp-chips-placeholder">Pago por monto</div>`;
 
       // Solo la primera línea del grupo muestra nombre y precio unitario
       const infoHtml = idx === 0
@@ -927,30 +931,128 @@ function updateDrawerTotal() {
     totalEl.classList.toggle("active", total > 0);
   }
 
-  // Resumen por método de pago
-  const resumenEl = document.getElementById("pagoResumen");
-  if (resumenEl && carrito.length > 0) {
-    const calc = (metodo) => ({
-      monto: carrito.filter(i => i.metodo_pago === metodo).reduce((s, i) => s + i.precio * i.cantidad, 0),
-      qty:   carrito.filter(i => i.metodo_pago === metodo).reduce((s, i) => s + i.cantidad, 0),
-    });
-    const efe = calc("efectivo");
-    const deb = calc("debito");
-    const cre = calc("credito");
-    const fila = ({ monto, qty }, cls, label) =>
-      monto > 0
-        ? `<div class="pago-resumen-row"><span class="pr-label ${cls}">${label}</span><span class="pr-qty">${qty} prod.</span><span>${fmt(monto)}</span></div>`
-        : "";
-    const rows = [
-      fila(efe, "efe", "Efectivo"),
-      fila(deb, "deb", "Débito"),
-      fila(cre, "cre", "Crédito"),
-    ].filter(Boolean).join("");
-    resumenEl.innerHTML = rows;
-    resumenEl.style.display = rows ? "block" : "none";
-  } else if (resumenEl) {
-    resumenEl.style.display = "none";
+  actualizarResumenPagos(total);
+}
+
+function calcularPagosPorProducto(total) {
+  const bruto = {
+    efectivo: carrito.filter(i => i.metodo_pago === "efectivo").reduce((s, i) => s + i.precio * i.cantidad, 0),
+    debito:   carrito.filter(i => i.metodo_pago === "debito").reduce((s, i) => s + i.precio * i.cantidad, 0),
+    credito:  carrito.filter(i => i.metodo_pago === "credito").reduce((s, i) => s + i.precio * i.cantidad, 0),
+  };
+  const subtotal = bruto.efectivo + bruto.debito + bruto.credito;
+  if (subtotal > 0 && currentDiscount > 0) {
+    for (const k of Object.keys(bruto)) bruto[k] = Math.max(0, bruto[k] - (currentDiscount * bruto[k] / subtotal));
   }
+  const suma = bruto.efectivo + bruto.debito + bruto.credito;
+  if (Math.round(suma) !== Math.round(total)) bruto.efectivo += total - suma;
+  return bruto;
+}
+
+function pagosPorMontoActivos() {
+  return modoCobro === "monto";
+}
+
+function calcularPagosManual() {
+  return {
+    efectivo: parseFloat(pagosPorMonto.efectivo) || 0,
+    debito:   parseFloat(pagosPorMonto.debito)   || 0,
+    credito:  parseFloat(pagosPorMonto.credito)  || 0,
+  };
+}
+
+function getPagosFinales(total) {
+  if (pagosPorMontoActivos()) return calcularPagosManual();
+  return calcularPagosPorProducto(total);
+}
+
+function totalPagosManual() {
+  const p = calcularPagosManual();
+  return p.efectivo + p.debito + p.credito;
+}
+function setModoCobro(modo) {
+  modoCobro = modo === "monto" ? "monto" : "producto";
+  if (modoCobro === "monto" && !["efectivo", "debito", "credito"].some(k => pagosPorMonto[k] !== "")) {
+    const total = calcularTotalActual();
+    const p = calcularPagosPorProducto(total);
+    pagosPorMonto = {
+      efectivo: p.efectivo ? String(Math.round(p.efectivo)) : "",
+      debito:   p.debito   ? String(Math.round(p.debito))   : "",
+      credito:  p.credito  ? String(Math.round(p.credito))  : "",
+    };
+  }
+  renderCartItems();
+  actualizarResumenPagos(calcularTotalActual());
+}
+
+
+function limpiarPagosPorMonto() {
+  pagosPorMonto = { efectivo: "", debito: "", credito: "" };
+  modoCobro = "producto";
+  renderCartItems();
+  actualizarResumenPagos(calcularTotalActual());
+}
+
+function actualizarEstadoPagosMonto(total) {
+  const estado = document.getElementById("pagoMontoEstado");
+  if (!estado) return;
+  const suma = totalPagosManual();
+  const dif  = total - suma;
+  if (modoCobro !== "monto") {
+    estado.textContent = "";
+    estado.className = "pago-monto-estado";
+  } else if (Math.abs(dif) < 0.01) {
+    estado.textContent = "Los montos coinciden con el total.";
+    estado.className = "pago-monto-estado ok";
+  } else if (dif > 0) {
+    estado.textContent = `Falta asignar ${fmt(dif)}.`;
+    estado.className = "pago-monto-estado warn";
+  } else {
+    estado.textContent = `Te pasaste por ${fmt(Math.abs(dif))}.`;
+    estado.className = "pago-monto-estado error";
+  }
+}
+
+function actualizarResumenPagos(total) {
+  const resumenEl = document.getElementById("pagoResumen");
+  if (!resumenEl) return;
+  if (carrito.length === 0) { resumenEl.style.display = "none"; return; }
+
+  const calcQty = (metodo) => carrito.filter(i => i.metodo_pago === metodo).reduce((s, i) => s + i.cantidad, 0);
+  const pagosProducto = calcularPagosPorProducto(total);
+  const fila = (monto, qty, cls, label) => monto > 0
+    ? `<div class="pago-resumen-row"><span class="pr-label ${cls}">${label}</span><span class="pr-qty">${qty} prod.</span><span>${fmt(monto)}</span></div>`
+    : "";
+  const rows = [
+    fila(pagosProducto.efectivo, calcQty("efectivo"), "efe", "Efectivo"),
+    fila(pagosProducto.debito,   calcQty("debito"),   "deb", "Débito"),
+    fila(pagosProducto.credito,  calcQty("credito"),  "cre", "Crédito"),
+  ].filter(Boolean).join("");
+
+  const modoMonto = modoCobro === "monto";
+  resumenEl.innerHTML = `
+    <div class="modo-cobro-bar">
+      <span class="modo-cobro-title">Modo de cobro</span>
+      <div class="modo-cobro-toggle" role="group" aria-label="Modo de cobro">
+        <button type="button" class="modo-cobro-btn${!modoMonto ? ' active' : ''}" data-modo-cobro="producto">Por producto</button>
+        <button type="button" class="modo-cobro-btn${modoMonto ? ' active' : ''}" data-modo-cobro="monto">Por monto</button>
+      </div>
+    </div>
+    ${!modoMonto ? `
+      <div class="pago-resumen-compact">
+        ${rows || '<div class="pago-resumen-row"><span>Sin pagos asignados</span></div>'}
+      </div>` : `
+      <div class="pago-monto-box is-open">
+        <div class="pago-monto-grid">
+          <label><span>Efectivo</span><input class="pago-monto-input" data-pago-monto="efectivo" type="number" min="0" step="1" placeholder="0" value="${pagosPorMonto.efectivo}"></label>
+          <label><span>Débito</span><input class="pago-monto-input" data-pago-monto="debito" type="number" min="0" step="1" placeholder="0" value="${pagosPorMonto.debito}"></label>
+          <label><span>Crédito</span><input class="pago-monto-input" data-pago-monto="credito" type="number" min="0" step="1" placeholder="0" value="${pagosPorMonto.credito}"></label>
+        </div>
+        <div id="pagoMontoEstado" class="pago-monto-estado"></div>
+      </div>`}
+  `;
+  resumenEl.style.display = "block";
+  actualizarEstadoPagosMonto(total);
 }
 
 function updatePayButtons() {
@@ -1110,14 +1212,13 @@ async function cobrarVenta() {
   const subtotal = carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
   const total    = subtotal - currentDiscount;
 
-  // Resumen de pagos por método
-  const pagos = {
-    efectivo: carrito.filter(i => i.metodo_pago === "efectivo").reduce((s, i) => s + i.precio * i.cantidad, 0),
-    debito:   carrito.filter(i => i.metodo_pago === "debito").reduce((s, i) => s + i.precio * i.cantidad, 0),
-    credito:  carrito.filter(i => i.metodo_pago === "credito").reduce((s, i) => s + i.precio * i.cantidad, 0),
-  };
-  // Aplicar descuento proporcional al efectivo (simplificado)
-  if (currentDiscount > 0) pagos.efectivo = Math.max(0, pagos.efectivo - currentDiscount);
+  // Resumen de pagos por método. Si se cargaron montos manuales, tienen prioridad.
+  const pagos = getPagosFinales(total);
+  const sumaPagos = pagos.efectivo + pagos.debito + pagos.credito;
+  if (pagosPorMontoActivos() && Math.abs(sumaPagos - total) > 0.01) {
+    showToast(`Los montos de pago deben sumar ${fmt(total)}`, "error");
+    return;
+  }
 
   // Determinar metodo_pago principal (el de mayor monto)
   const metodoPrincipal = Object.entries(pagos).reduce((a, b) => b[1] > a[1] ? b : a)[0];
@@ -1143,6 +1244,8 @@ async function cobrarVenta() {
     document.getElementById("discount").value     = "";
     document.getElementById("discountDesc").value = "";
     currentDiscount = 0;
+    pagosPorMonto = { efectivo: "", debito: "", credito: "" };
+    modoCobro = "producto";
     localStorage.removeItem("carrito");
     updateTotal();
     applyFilters();
@@ -2478,6 +2581,7 @@ document.addEventListener("DOMContentLoaded", () => {
       case "pagar":                  pagar(arg);                    break;
       case "cobrarVenta":            cobrarVenta();                 break;
       case "clearCart":              clearCart();                   break;
+      case "limpiarPagosPorMonto":   limpiarPagosPorMonto();        break;
 
       // Modal cambio efectivo
       case "handleCambioOverlayClick": handleCambioOverlayClick(e); break;
@@ -2542,6 +2646,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ── Delegación global para data-oninput ──────────────────────
   document.addEventListener("input", (e) => {
+    const pagoMonto = e.target.closest("[data-pago-monto]");
+    if (pagoMonto) {
+      const metodo = pagoMonto.dataset.pagoMonto;
+      pagosPorMonto[metodo] = pagoMonto.value;
+      actualizarEstadoPagosMonto(calcularTotalActual());
+      return;
+    }
+
     const el = e.target.closest("[data-oninput]");
     if (!el) return;
 
@@ -2558,6 +2670,13 @@ document.addEventListener("DOMContentLoaded", () => {
   // changeQty, removeFromCart → botones con data-qty-id / data-remove-id
   // Se usan data-* en las funciones que generan el HTML dinámico (ver abajo).
   document.addEventListener("click", (e) => {
+
+    // Modo de cobro: Por producto / Por monto
+    const modoCobroBtn = e.target.closest("[data-modo-cobro]");
+    if (modoCobroBtn) {
+      setModoCobro(modoCobroBtn.dataset.modoCobro);
+      return;
+    }
 
     // cambiarMetodoPago: chips de método generados con data-mp-key y data-mp-metodo
     const mpChip = e.target.closest("[data-mp-key]");
