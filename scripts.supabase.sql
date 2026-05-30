@@ -185,3 +185,15 @@ on public.usuarios
 for update
 using (auth.uid() = auth_user_id)
 with check (auth.uid() = auth_user_id);
+
+------------------------
+-- TIPOS DE PAGO EN CARRITO
+------------------------
+
+ALTER TABLE public.ventas
+  ADD COLUMN IF NOT EXISTS pagos jsonb;
+
+-- 2. Verificar que la columna se creó correctamente
+SELECT column_name, data_type
+FROM information_schema.columns
+WHERE table_name = 'ventas' AND column_name = 'pagos';

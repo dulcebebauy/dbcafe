@@ -3,4 +3,4 @@ dist/
 .env.development
 .env.production
 .env.local
-.zip
+*.zip
