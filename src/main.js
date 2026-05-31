@@ -708,24 +708,20 @@ function cambiarMetodoPago(lineKey, nuevoMetodo) {
   navigator.vibrate?.(15);
 }
 
-// Cambiar método de pago de TODOS los productos al mismo método (long press)
-function cambiarMetodoPagoTodos(nuevoMetodo) {
+// Cambiar método de pago de TODAS las unidades de un producto específico (long press)
+function cambiarMetodoPagoTodos(prodId, nuevoMetodo) {
   if (carrito.length === 0) return;
 
-  // Agrupar por id de producto sumando cantidades
-  const agrupado = {};
-  carrito.forEach(item => {
-    if (!agrupado[item.id]) {
-      agrupado[item.id] = { id: item.id, nombre: item.nombre, precio: item.precio, cantidad: 0 };
-    }
-    agrupado[item.id].cantidad += item.cantidad;
-  });
+  // Sumar todas las cantidades de ese producto (independientemente del método actual)
+  const lineasProducto = carrito.filter(i => i.id === prodId);
+  if (lineasProducto.length === 0) return;
 
-  // Reemplazar el carrito con una sola línea por producto, con el nuevo método
-  carrito = Object.values(agrupado).map(item => ({
-    ...item,
-    metodo_pago: nuevoMetodo,
-  }));
+  const totalCantidad = lineasProducto.reduce((s, i) => s + i.cantidad, 0);
+  const ref = lineasProducto[0];
+
+  // Eliminar todas las líneas del producto y dejar solo una con el nuevo método
+  carrito = carrito.filter(i => i.id !== prodId);
+  carrito.push({ id: ref.id, nombre: ref.nombre, precio: ref.precio, cantidad: totalCantidad, metodo_pago: nuevoMetodo });
 
   updateTotal();
   renderCartItems();
@@ -930,7 +926,7 @@ function renderCartItems() {
             chip.classList.add("mp-chip--pressing");
             lpTimer = setTimeout(() => {
               chip.classList.remove("mp-chip--pressing");
-              cambiarMetodoPagoTodos(chip.dataset.mpMetodo);
+              cambiarMetodoPagoTodos(prodId, chip.dataset.mpMetodo);
             }, LP_DURATION);
           };
           const cancelLP = () => {
