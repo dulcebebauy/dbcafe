@@ -708,6 +708,32 @@ function cambiarMetodoPago(lineKey, nuevoMetodo) {
   navigator.vibrate?.(15);
 }
 
+// Cambiar método de pago de TODOS los productos al mismo método (long press)
+function cambiarMetodoPagoTodos(nuevoMetodo) {
+  if (carrito.length === 0) return;
+
+  // Agrupar por id de producto sumando cantidades
+  const agrupado = {};
+  carrito.forEach(item => {
+    if (!agrupado[item.id]) {
+      agrupado[item.id] = { id: item.id, nombre: item.nombre, precio: item.precio, cantidad: 0 };
+    }
+    agrupado[item.id].cantidad += item.cantidad;
+  });
+
+  // Reemplazar el carrito con una sola línea por producto, con el nuevo método
+  carrito = Object.values(agrupado).map(item => ({
+    ...item,
+    metodo_pago: nuevoMetodo,
+  }));
+
+  updateTotal();
+  renderCartItems();
+  applyFilters();
+  saveCart();
+  navigator.vibrate?.([30, 50, 30]);
+}
+
 function removeFromCart(lineKey) {
   const [id, metodo] = lineKey.split(":::");
   carrito = carrito.filter(i => !(i.id === id && i.metodo_pago === metodo));
@@ -894,6 +920,33 @@ function renderCartItems() {
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
         </button>
       `;
+      // Long press en mp-chip → cambia TODOS los productos al método presionado
+      if (modoCobro === "producto") {
+        div.querySelectorAll(".mp-chip").forEach(chip => {
+          let lpTimer = null;
+          const LP_DURATION = 500;
+
+          const startLP = () => {
+            chip.classList.add("mp-chip--pressing");
+            lpTimer = setTimeout(() => {
+              chip.classList.remove("mp-chip--pressing");
+              cambiarMetodoPagoTodos(chip.dataset.mpMetodo);
+            }, LP_DURATION);
+          };
+          const cancelLP = () => {
+            clearTimeout(lpTimer);
+            chip.classList.remove("mp-chip--pressing");
+          };
+
+          chip.addEventListener("touchstart",  startLP,  { passive: true });
+          chip.addEventListener("touchend",     cancelLP);
+          chip.addEventListener("touchcancel",  cancelLP);
+          chip.addEventListener("mousedown",    e => { if (e.button === 0) startLP(); });
+          chip.addEventListener("mouseup",      cancelLP);
+          chip.addEventListener("mouseleave",   cancelLP);
+        });
+      }
+
       wrapper.appendChild(div);
     });
 
