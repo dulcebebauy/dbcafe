@@ -1808,6 +1808,7 @@ function adminMenuAction(accion) {
   if (accion === "producto") openAdminProd();
   if (accion === "gastos")   openGastos();
   if (accion === "reporte-gastos") openGastosReport();
+  if (accion === "cruce")          openCruce();
   if (accion === "configuracion")  openConfig();
 }
 
@@ -2671,6 +2672,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Reporte gastos
       case "closeGastosReport":      closeGastosReport();          break;
+      // Cruce ingresos vs gastos
+      case "closeCruce":             closeCruce();                  break;
+      case "recargarCruce":          cargarCruce();                 break;
+      case "aplicarFiltroCruce":     aplicarFiltroCruce();          break;
+      case "setQuickFilterCruce":    setQuickFilterCruce(qf, el);   break;
       case "closeAdminProd":         closeAdminProd();             break;
       case "openAddProductoAdmin":   openProductModal(null);       break;
       case "setAdminCatFilter":      setAdminCatFilter(el.dataset.adminCat, el); break;
@@ -3082,6 +3088,8 @@ function getActiveLayer() {
     return "adminProd";
   if (document.getElementById("gastosReportPanel")?.classList.contains("open"))
     return "gastosReport";
+  if (document.getElementById("crucePanel")?.classList.contains("open"))
+    return "cruce";
   if (document.getElementById("gastosPanel")?.classList.contains("open"))
     return "gastos";
   if (document.getElementById("reportPanel")?.classList.contains("open"))
@@ -3108,6 +3116,7 @@ function navigateBack() {
     case "productModal":  closeProductModal();  break;
     case "adminProd":     closeAdminProd();     break;
     case "gastosReport":  closeGastosReport();  break;
+    case "cruce":         closeCruce();         break;
     case "gastos":        closeGastos();        break;
     case "report":        closeReport();        break;
     case "config":        closeConfig();        break;
@@ -3299,3 +3308,298 @@ async function loadUserPreferences() {
   }
 }
 
+
+
+/* ═══════════════════════════════════════════════════════════════
+   REPORTE CRUCE INGRESOS VS GASTOS
+   Los ingresos se calculan con la rebaja IVA de la ley de
+   inclusión financiera, igual que en el reporte de ingresos.
+═══════════════════════════════════════════════════════════════ */
+
+window._cruceGastos = [];
+
+async function openCruce() {
+  document.getElementById("crucePanel").classList.add("open");
+  await cargarCruce();
+  if (typeof pushNavState === "function") pushNavState();
+}
+
+function closeCruce() {
+  document.getElementById("crucePanel").classList.remove("open");
+}
+
+function setQuickFilterCruce(tipo, btn) {
+  document.querySelectorAll("#crucePanel .qf-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  const hoy = new Date();
+  let desde = "", hasta = "";
+  if (tipo === "hoy") {
+    desde = hasta = toDateStr(hoy);
+  } else if (tipo === "semana") {
+    const lunes = new Date(hoy);
+    lunes.setDate(hoy.getDate() - hoy.getDay() + (hoy.getDay() === 0 ? -6 : 1));
+    desde = toDateStr(lunes);
+    hasta = toDateStr(hoy);
+  } else if (tipo === "mes") {
+    desde = toDateStr(new Date(hoy.getFullYear(), hoy.getMonth(), 1));
+    hasta = toDateStr(hoy);
+  }
+  document.getElementById("cruceFechaDesde").value = desde;
+  document.getElementById("cruceFechaHasta").value = hasta;
+  renderCruce();
+}
+
+function aplicarFiltroCruce() {
+  document.querySelectorAll("#crucePanel .qf-btn").forEach(b => b.classList.remove("active"));
+  renderCruce();
+}
+
+async function cargarCruce() {
+  const content = document.getElementById("cruceContent");
+  content.innerHTML = `<div class="report-loading"><div class="spinner"></div><span>Cargando datos...</span></div>`;
+  try {
+    // Cargar ventas si el caché está vacío
+    if (ventasCache.length === 0) {
+      await cargarVentas();
+    }
+    // Cargar gastos (solo id, fecha, total — liviano)
+    const { data: gastos, error } = await window.supabase_res
+      .from("gastos")
+      .select("id, fecha, total")
+      .order("fecha", { ascending: true });
+    if (error) throw error;
+    window._cruceGastos = gastos || [];
+
+    // Setear filtro "este mes" por defecto
+    const hoy = new Date();
+    document.getElementById("cruceFechaDesde").value =
+      toDateStr(new Date(hoy.getFullYear(), hoy.getMonth(), 1));
+    document.getElementById("cruceFechaHasta").value = toDateStr(hoy);
+    document.querySelectorAll("#crucePanel .qf-btn").forEach(b => b.classList.remove("active"));
+    const mesBtn = document.querySelector("#crucePanel .qf-btn[data-qf='mes']");
+    if (mesBtn) mesBtn.classList.add("active");
+
+    renderCruce();
+  } catch (e) {
+    console.error("Error cruce:", e);
+    content.innerHTML = `
+      <div class="report-empty">
+        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+        <p>No se pudo cargar el reporte.<br>Verificá tu conexión e intentá nuevamente.</p>
+      </div>`;
+  }
+}
+
+function renderCruce() {
+  const desde = document.getElementById("cruceFechaDesde").value;
+  const hasta  = document.getElementById("cruceFechaHasta").value;
+  const content = document.getElementById("cruceContent");
+
+  // ── Ventas únicas filtradas por fecha ──
+  const ventasUnicas = new Map();
+  ventasCache.forEach(v => {
+    if (!ventasUnicas.has(v.ventaId)) ventasUnicas.set(v.ventaId, v);
+  });
+  const ventasFiltradas = [...ventasUnicas.values()].filter(v => {
+    const f = v.fecha ? toDateStr(new Date(v.fecha)) : "";
+    if (desde && f < desde) return false;
+    if (hasta  && f > hasta)  return false;
+    return true;
+  });
+
+  // ── Gastos filtrados por fecha ──
+  const gastos = (window._cruceGastos || []).filter(g => {
+    if (!g.fecha) return true;
+    if (desde && g.fecha < desde) return false;
+    if (hasta  && g.fecha > hasta)  return false;
+    return true;
+  });
+
+  // ── Desglose ingresos por método de pago (igual que renderReporte) ──
+  let efectivo = 0, debito = 0, credito = 0;
+  ventasFiltradas.forEach(v => {
+    if (v.pagos && typeof v.pagos === "object") {
+      efectivo += Math.max(parseFloat(v.pagos.efectivo) || 0, 0);
+      debito   += Math.max(parseFloat(v.pagos.debito)   || 0, 0);
+      credito  += Math.max(parseFloat(v.pagos.credito)  || 0, 0);
+    } else {
+      const monto = Math.max(parseFloat(v.ventaTotal) || 0, 0);
+      const m = String(v.metodo || "").toLowerCase();
+      if (m === "efectivo")     efectivo += monto;
+      else if (m === "debito")  debito   += monto;
+      else if (m === "credito") credito  += monto;
+      else                      efectivo += monto;
+    }
+  });
+
+  // ── Rebaja IVA Ley Inclusión Financiera (idéntico a renderReporte) ──
+  const divisorIVA       = 100 + IVA_TASA;
+  const debitoDescuento  = debito  * IVA_REBAJA_DEBITO  / divisorIVA;
+  const creditoDescuento = credito * IVA_REBAJA_CREDITO / divisorIVA;
+  const debitoNeto       = debito  - debitoDescuento;
+  const creditoNeto      = credito - creditoDescuento;
+  const totalDescuentoIVA = debitoDescuento + creditoDescuento;
+
+  // ── KPIs finales ──
+  const totalIngresos = efectivo + debitoNeto + creditoNeto;  // ingresos reales netos de IVA rebajado
+  const totalGastos   = gastos.reduce((s, g) => s + (parseFloat(g.total) || 0), 0);
+  const balance       = totalIngresos - totalGastos;
+  const margen        = totalIngresos > 0 ? (balance / totalIngresos * 100) : 0;
+  const balColor      = balance >= 0 ? "#16a34a" : "#dc2626";
+  const balBg         = balance >= 0 ? "#f0fdf4" : "#fef2f2";
+  const balBorder     = balance >= 0 ? "#bbf7d0" : "#fecaca";
+  const cobradoBruto  = efectivo + debito + credito;
+
+  // ── Cruce por día (usando ingreso neto por día) ──
+  const diasMap = {};
+
+  // Ingresos por día: recalculamos neto proporcionalmente
+  // Cada venta única contribuye su porción neta (efectivo sin rebaja, debito/credito con rebaja)
+  ventasFiltradas.forEach(v => {
+    const d = v.fecha ? toDateStr(new Date(v.fecha)) : null;
+    if (!d) return;
+    if (!diasMap[d]) diasMap[d] = { ingresos: 0, gastos: 0 };
+
+    let netoVenta = 0;
+    if (v.pagos && typeof v.pagos === "object") {
+      const ef = Math.max(parseFloat(v.pagos.efectivo) || 0, 0);
+      const db = Math.max(parseFloat(v.pagos.debito)   || 0, 0);
+      const cr = Math.max(parseFloat(v.pagos.credito)  || 0, 0);
+      netoVenta = ef
+        + db * (1 - IVA_REBAJA_DEBITO  / divisorIVA)
+        + cr * (1 - IVA_REBAJA_CREDITO / divisorIVA);
+    } else {
+      const monto = Math.max(parseFloat(v.ventaTotal) || 0, 0);
+      const m = String(v.metodo || "").toLowerCase();
+      if (m === "debito")       netoVenta = monto * (1 - IVA_REBAJA_DEBITO  / divisorIVA);
+      else if (m === "credito") netoVenta = monto * (1 - IVA_REBAJA_CREDITO / divisorIVA);
+      else                      netoVenta = monto;
+    }
+    diasMap[d].ingresos += netoVenta;
+  });
+
+  gastos.forEach(g => {
+    const d = g.fecha;
+    if (!d) return;
+    if (!diasMap[d]) diasMap[d] = { ingresos: 0, gastos: 0 };
+    diasMap[d].gastos += parseFloat(g.total) || 0;
+  });
+
+  const dias = Object.entries(diasMap).sort((a, b) => a[0].localeCompare(b[0]));
+
+  // ── Gráfica SVG barras (últimos 14 días) ──
+  const chartDays = dias.slice(-14);
+  const maxVal    = Math.max(...chartDays.flatMap(([, d]) => [d.ingresos, d.gastos]), 1);
+  const barW = 10, gap = 3, groupW = barW * 2 + gap + 10;
+  const chartW = Math.max(chartDays.length * groupW + 44, 280);
+  const chartH = 80;
+
+  const barsSVG = chartDays.map(([fecha, d], i) => {
+    const x  = 32 + i * groupW;
+    const hi = Math.max(Math.round((d.ingresos / maxVal) * chartH), d.ingresos > 0 ? 2 : 0);
+    const hg = Math.max(Math.round((d.gastos   / maxVal) * chartH), d.gastos   > 0 ? 2 : 0);
+    const label = fecha.slice(5).replace("-", "/");
+    return `
+      <rect x="${x}" y="${chartH - hi}" width="${barW}" height="${hi}" fill="#22c55e" rx="2" opacity=".9"/>
+      <rect x="${x + barW + gap}" y="${chartH - hg}" width="${barW}" height="${hg}" fill="#ef4444" rx="2" opacity=".9"/>
+      <text x="${x + barW}" y="${chartH + 14}" text-anchor="middle" font-size="7" fill="#94a3b8">${label}</text>`;
+  }).join("");
+
+  const svgChart = chartDays.length > 0 ? `
+    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+      <svg viewBox="0 0 ${chartW} ${chartH + 22}" style="width:100%;min-width:${chartW}px;height:auto;display:block;" xmlns="http://www.w3.org/2000/svg">
+        <line x1="30" y1="0" x2="30" y2="${chartH}" stroke="#e2e8f0" stroke-width="1"/>
+        <line x1="30" y1="${chartH}" x2="${chartW}" y2="${chartH}" stroke="#e2e8f0" stroke-width="1"/>
+        ${barsSVG}
+      </svg>
+    </div>
+    <div style="display:flex;gap:14px;font-size:11px;color:#64748b;padding:4px 2px 0;">
+      <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;background:#22c55e;border-radius:2px;display:inline-block;"></span>Ingresos netos</span>
+      <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;background:#ef4444;border-radius:2px;display:inline-block;"></span>Gastos</span>
+    </div>` : `<p style="font-size:13px;color:#94a3b8;padding:12px 0 4px;">Sin datos para graficar en este período.</p>`;
+
+  // ── Tabla por día (desc) ──
+  const diasDesc  = [...dias].reverse();
+  const tablaRows = diasDesc.slice(0, 60).map(([fecha, d]) => {
+    const bal   = d.ingresos - d.gastos;
+    const color = bal >= 0 ? "#16a34a" : "#dc2626";
+    const sign  = bal >= 0 ? "+" : "";
+    const dd    = fecha.slice(8) + "/" + fecha.slice(5, 7);
+    return `
+      <div style="display:grid;grid-template-columns:56px 1fr 1fr 1fr;gap:4px;padding:8px 12px;border-bottom:1px solid var(--border,#e2e8f0);font-size:12px;align-items:center;">
+        <span style="color:#475569;font-weight:500;">${dd}</span>
+        <span style="text-align:right;color:#16a34a;">${fmtUYU(d.ingresos)}</span>
+        <span style="text-align:right;color:#dc2626;">${fmtUYU(d.gastos)}</span>
+        <span style="text-align:right;font-weight:700;color:${color};">${sign}${fmtUYU(bal)}</span>
+      </div>`;
+  }).join("");
+
+  content.innerHTML = `
+    <!-- KPIs principales -->
+    <div class="gr-summary-grid" style="grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="gr-summary-card" style="background:#f0fdf4;border:1px solid #bbf7d0;">
+        <div class="gr-summary-label">💚 Ingresos netos</div>
+        <div class="gr-summary-value" style="color:#16a34a;font-size:clamp(14px,4vw,20px);">${fmtUYU(totalIngresos)}</div>
+        <div style="font-size:10px;color:#64748b;margin-top:3px;">cobrado ${fmtUYU(cobradoBruto)} · <span style="color:#ef4444;">−${fmtUYU(totalDescuentoIVA)} IVA ley</span></div>
+      </div>
+      <div class="gr-summary-card" style="background:#fef2f2;border:1px solid #fecaca;">
+        <div class="gr-summary-label">🔴 Gastos</div>
+        <div class="gr-summary-value" style="color:#dc2626;font-size:clamp(14px,4vw,20px);">${fmtUYU(totalGastos)}</div>
+      </div>
+      <div class="gr-summary-card" style="background:${balBg};border:1px solid ${balBorder};">
+        <div class="gr-summary-label">⚖️ Balance neto</div>
+        <div class="gr-summary-value" style="color:${balColor};font-size:clamp(14px,4vw,20px);">${balance >= 0 ? "+" : ""}${fmtUYU(balance)}</div>
+      </div>
+      <div class="gr-summary-card" style="background:${balBg};border:1px solid ${balBorder};">
+        <div class="gr-summary-label">📈 Margen</div>
+        <div class="gr-summary-value" style="color:${balColor};font-size:clamp(14px,4vw,20px);">${margen.toFixed(1)}%</div>
+      </div>
+    </div>
+
+    <!-- Detalle IVA ley inclusión financiera -->
+    <div class="gr-por-rubro-card" style="padding:12px 14px;">
+      <h3 style="margin-bottom:10px;">Rebaja IVA · Ley inclusión financiera</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:12px;">
+        <div style="background:#f8fafc;border-radius:8px;padding:10px;border:1px solid #e2e8f0;">
+          <div style="color:#64748b;font-size:10px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;">Efectivo</div>
+          <div style="font-weight:700;color:#0f172a;">${fmtUYU(efectivo)}</div>
+          <div style="color:#94a3b8;font-size:10px;margin-top:2px;">sin rebaja</div>
+        </div>
+        <div style="background:#eff6ff;border-radius:8px;padding:10px;border:1px solid #bfdbfe;">
+          <div style="color:#1d4ed8;font-size:10px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;">Débito · ${IVA_REBAJA_DEBITO} pts</div>
+          <div style="font-weight:700;color:#0f172a;">${fmtUYU(debitoNeto)}</div>
+          <div style="color:#ef4444;font-size:10px;margin-top:2px;">−${fmtUYU(debitoDescuento)} IVA</div>
+        </div>
+        <div style="background:#f5f3ff;border-radius:8px;padding:10px;border:1px solid #ddd6fe;">
+          <div style="color:#7c3aed;font-size:10px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;">Crédito · ${IVA_REBAJA_CREDITO} pts</div>
+          <div style="font-weight:700;color:#0f172a;">${fmtUYU(creditoNeto)}</div>
+          <div style="color:#ef4444;font-size:10px;margin-top:2px;">−${fmtUYU(creditoDescuento)} IVA</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gráfica de barras -->
+    <div class="gr-por-rubro-card">
+      <h3>Comparativa por día</h3>
+      ${svgChart}
+    </div>
+
+    <!-- Tabla cruce diario -->
+    ${dias.length > 0 ? `
+    <div class="gr-table-card" style="padding:0;overflow:hidden;">
+      <h3 style="padding:12px 14px 8px;margin:0;">Detalle por día</h3>
+      <div style="display:grid;grid-template-columns:56px 1fr 1fr 1fr;gap:4px;padding:6px 12px;background:#f1f5f9;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;">
+        <span>Fecha</span>
+        <span style="text-align:right;">Ing. neto</span>
+        <span style="text-align:right;">Gastos</span>
+        <span style="text-align:right;">Balance</span>
+      </div>
+      ${tablaRows}
+      ${diasDesc.length > 60 ? `<p style="text-align:center;font-size:12px;color:#94a3b8;padding:8px 0;">Mostrando 60 de ${diasDesc.length} días</p>` : ""}
+    </div>` : `
+    <div class="report-empty">
+      <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <p>No hay datos en el período seleccionado.</p>
+    </div>`}
+  `;
+}
