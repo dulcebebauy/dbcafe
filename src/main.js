@@ -712,16 +712,20 @@ function cambiarMetodoPago(lineKey, nuevoMetodo) {
 function cambiarMetodoPagoTodos(prodId, nuevoMetodo) {
   if (carrito.length === 0) return;
 
-  // Sumar todas las cantidades de ese producto (independientemente del método actual)
   const lineasProducto = carrito.filter(i => i.id === prodId);
   if (lineasProducto.length === 0) return;
 
   const totalCantidad = lineasProducto.reduce((s, i) => s + i.cantidad, 0);
   const ref = lineasProducto[0];
 
-  // Eliminar todas las líneas del producto y dejar solo una con el nuevo método
+  // Encontrar el índice de la primera línea del producto para insertar ahí
+  const primerIdx = carrito.findIndex(i => i.id === prodId);
+
+  // Eliminar todas las líneas del producto
   carrito = carrito.filter(i => i.id !== prodId);
-  carrito.push({ id: ref.id, nombre: ref.nombre, precio: ref.precio, cantidad: totalCantidad, metodo_pago: nuevoMetodo });
+
+  // Reinsertar en la posición original
+  carrito.splice(primerIdx, 0, { id: ref.id, nombre: ref.nombre, precio: ref.precio, cantidad: totalCantidad, metodo_pago: nuevoMetodo });
 
   updateTotal();
   renderCartItems();
