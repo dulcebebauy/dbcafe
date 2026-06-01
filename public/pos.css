@@ -1542,7 +1542,7 @@ body {
 
 .summary-card.green .summary-value { color: var(--green); }
 .summary-card.blue  .summary-value { color: var(--blue); }
-.summary-card.orange { background: #fff7ed; border-color: #fed7aa; }
+/*.summary-card.orange { background: #fff7ed; border-color: #fed7aa; }*/
 .summary-card.orange .summary-value { color: #c2410c; }
 .summary-card.purple .summary-value { color: var(--purple); }
 
