@@ -264,3 +264,24 @@
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 }
+
+/* Cards navegables del reporte Ingresos vs Gastos */
+#cruceContent .gr-clickable-card {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform .16s ease, box-shadow .16s ease, filter .16s ease;
+}
+
+#cruceContent .gr-clickable-card:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.02);
+}
+
+#cruceContent .gr-clickable-card:active {
+  transform: scale(.985);
+}
+
+#cruceContent .gr-clickable-card:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 3px;
+}

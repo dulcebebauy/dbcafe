@@ -3397,6 +3397,41 @@ function closeCruce() {
   document.getElementById("crucePanel").classList.remove("open");
 }
 
+async function navegarDesdeCruce(destino) {
+  const desde = document.getElementById("cruceFechaDesde")?.value || "";
+  const hasta = document.getElementById("cruceFechaHasta")?.value || "";
+
+  closeCruce();
+
+  if (destino === "ingresos") {
+    openReport();
+
+    const fechaDesde = document.getElementById("fechaDesde");
+    const fechaHasta = document.getElementById("fechaHasta");
+    if (fechaDesde) fechaDesde.value = desde;
+    if (fechaHasta) fechaHasta.value = hasta;
+
+    document.querySelectorAll("#reportPanel .qf-btn").forEach(b => b.classList.remove("active"));
+    activeQuickFilter = null;
+    renderReporte();
+    return;
+  }
+
+  if (destino === "gastos") {
+    await openGastosReport();
+
+    const grFechaDesde = document.getElementById("grFechaDesde");
+    const grFechaHasta = document.getElementById("grFechaHasta");
+    if (grFechaDesde) grFechaDesde.value = desde;
+    if (grFechaHasta) grFechaHasta.value = hasta;
+
+    document.querySelectorAll("#gastosReportPanel .qf-btn").forEach(b => b.classList.remove("active"));
+    renderGastosReport();
+  }
+}
+
+window.navegarDesdeCruce = navegarDesdeCruce;
+
 function setQuickFilterCruce(tipo, btn) {
   document.querySelectorAll("#crucePanel .qf-btn").forEach(b => b.classList.remove("active"));
   btn.classList.add("active");
@@ -3610,12 +3645,12 @@ function renderCruce() {
   content.innerHTML = `
     <!-- KPIs principales -->
     <div class="gr-summary-grid" style="grid-template-columns:1fr 1fr;gap:10px;">
-      <div class="gr-summary-card" style="background:#f0fdf4;border:1px solid #bbf7d0;">
+      <div class="gr-summary-card gr-clickable-card" role="button" tabindex="0" onclick="window.navegarDesdeCruce(\'ingresos\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();window.navegarDesdeCruce(\'ingresos\');}" style="background:#f0fdf4;border:1px solid #bbf7d0;">
         <div class="gr-summary-label">💚 Ingresos netos</div>
         <div class="gr-summary-value" style="color:#16a34a;font-size:clamp(14px,4vw,20px);">${fmtUYU(totalIngresos)}</div>
         <div style="font-size:10px;color:#64748b;margin-top:3px;">cobrado ${fmtUYU(cobradoBruto)} · <span style="color:#ef4444;">−${fmtUYU(totalDescuentoIVA)} IVA ley</span></div>
       </div>
-      <div class="gr-summary-card" style="background:#fef2f2;border:1px solid #fecaca;">
+      <div class="gr-summary-card gr-clickable-card" role="button" tabindex="0" onclick="window.navegarDesdeCruce(\'gastos\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();window.navegarDesdeCruce(\'gastos\');}" style="background:#fef2f2;border:1px solid #fecaca;">
         <div class="gr-summary-label">🔴 Gastos</div>
         <div class="gr-summary-value" style="color:#dc2626;font-size:clamp(14px,4vw,20px);">${fmtUYU(totalGastos)}</div>
       </div>
