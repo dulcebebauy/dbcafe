@@ -2475,3 +2475,14 @@ body {
   .ci-total { grid-area: total; justify-self: end; width: auto; }
   .ci-remove { grid-area: remove; align-self: center; }
 }
+
+/* ===== REPORTE DE VENTAS MOBILE: Total vendido ancho completo ===== */
+@media (max-width: 599px) {
+  #reportContent .summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #reportContent .summary-grid .summary-card:first-child {
+    grid-column: 1 / -1;
+  }
+}
