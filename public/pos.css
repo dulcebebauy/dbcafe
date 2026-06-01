@@ -780,7 +780,8 @@ body {
 .cart-group[data-metodo="efectivo"] { border-left-color: #16a34a; }
 .cart-group[data-metodo="debito"]   { border-left-color: #2563eb; }
 .cart-group[data-metodo="credito"]  { border-left-color: #7c3aed; }
-.cart-group[data-metodo="mixto"]    { border-left-color: #d97706; }
+.cart-group[data-metodo="mixto"]    { border-left-color: #d90606; }
+.cart-group[data-metodo="transferencia"]{border-left-color: #f97316;}
 
 .cart-group .cart-item {
   margin-bottom: 0;
@@ -2134,6 +2135,11 @@ body {
   color: #fff;
   border-color: #6d28d9;
 }
+.mp-chip.active-transferencia{
+  background:#f97316;
+  border-color:#f97316;
+  color:#fff;
+}
 
 /* Hover estados inactivos */
 .mp-chip:not([class*="active-"]):hover {
@@ -2194,11 +2200,13 @@ body {
 .pr-label.efe { background: #dcfce7; color: #166534; }
 .pr-label.deb { background: #dbeafe; color: #1d4ed8; }
 .pr-label.cre { background: #ede9fe; color: #6d28d9; }
+.pr-label.tra { background: #ede9fe; color: #f97316;}
 
 [data-theme="dark"] .pago-resumen { background: var(--surface); }
 [data-theme="dark"] .pr-label.efe { background: #14532d; color: #86efac; }
 [data-theme="dark"] .pr-label.deb { background: #1e3a5f; color: #93c5fd; }
 [data-theme="dark"] .pr-label.cre { background: #3b1f6b; color: #c4b5fd; }
+[data-theme="dark"] .pr-label.tra { background: #b14a00; color: #f8bd93; }
 
 /* Cobro por monto dentro del carrito */
 .pago-resumen-titulo {
@@ -2216,7 +2224,7 @@ body {
 }
 .pago-monto-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 6px;
 }
 .pago-monto-grid label {
