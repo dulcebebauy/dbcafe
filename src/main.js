@@ -25,7 +25,7 @@ let mesaEditando      = null;
 let cambioMetodo      = "efectivo";
 let activeCatFilter   = "todos";
 let adminCatFilter    = "todos";
-let pagosPorMonto     = { efectivo: "", debito: "", credito: "" };
+let pagosPorMonto     = { efectivo: "", debito: "", credito: "", transferencia: "" };
 let modoCobro         = "producto";
 
 Object.defineProperty(window, "carrito", {
@@ -749,7 +749,7 @@ function clearCart() {
   document.getElementById("discount").value     = "";
   document.getElementById("discountDesc").value = "";
   currentDiscount = 0;
-  pagosPorMonto = { efectivo: "", debito: "", credito: "" };
+  pagosPorMonto = { efectivo: "", debito: "", credito: "", transferencia: "" };
   modoCobro = "producto";
   saveCart();
   updateTotal();
@@ -858,6 +858,7 @@ function renderCartItems() {
     { key: "efectivo", label: "Efe" },
     { key: "debito",   label: "Déb" },
     { key: "credito",  label: "Cré" },
+    { key: "transferencia", label: "Transf" },
   ];
 
   cont.innerHTML = "";
@@ -987,6 +988,7 @@ function updateDrawerTotal() {
   actualizarResumenPagos(total);
 }
 
+/*
 function calcularPagosPorProducto(total) {
   const bruto = {
     efectivo: carrito.filter(i => i.metodo_pago === "efectivo").reduce((s, i) => s + i.precio * i.cantidad, 0),
@@ -997,20 +999,67 @@ function calcularPagosPorProducto(total) {
   if (subtotal > 0 && currentDiscount > 0) {
     for (const k of Object.keys(bruto)) bruto[k] = Math.max(0, bruto[k] - (currentDiscount * bruto[k] / subtotal));
   }
-  const suma = bruto.efectivo + bruto.debito + bruto.credito;
+  const suma = bruto.efectivo + bruto.debito + bruto.credito + bruto.transferencia;
   if (Math.round(suma) !== Math.round(total)) bruto.efectivo += total - suma;
   return bruto;
 }
+*/
+function calcularPagosPorProducto(total) {
+  const bruto = {
+    efectivo: carrito
+      .filter(i => i.metodo_pago === "efectivo")
+      .reduce((s, i) => s + i.precio * i.cantidad, 0),
 
+    debito: carrito
+      .filter(i => i.metodo_pago === "debito")
+      .reduce((s, i) => s + i.precio * i.cantidad, 0),
+
+    credito: carrito
+      .filter(i => i.metodo_pago === "credito")
+      .reduce((s, i) => s + i.precio * i.cantidad, 0),
+
+    transferencia: carrito
+      .filter(i => i.metodo_pago === "transferencia")
+      .reduce((s, i) => s + i.precio * i.cantidad, 0),
+  };
+
+  const subtotal =
+    bruto.efectivo +
+    bruto.debito +
+    bruto.credito +
+    bruto.transferencia;
+
+  if (subtotal > 0 && currentDiscount > 0) {
+    for (const k of Object.keys(bruto)) {
+      bruto[k] = Math.max(
+        0,
+        bruto[k] - (currentDiscount * bruto[k] / subtotal)
+      );
+    }
+  }
+
+  const suma =
+    bruto.efectivo +
+    bruto.debito +
+    bruto.credito +
+    bruto.transferencia;
+
+  if (Math.round(suma) !== Math.round(total)) {
+    bruto.efectivo += total - suma;
+  }
+
+  return bruto;
+}
 function pagosPorMontoActivos() {
   return modoCobro === "monto";
 }
 
 function calcularPagosManual() {
   return {
-    efectivo: parseFloat(pagosPorMonto.efectivo) || 0,
-    debito:   parseFloat(pagosPorMonto.debito)   || 0,
-    credito:  parseFloat(pagosPorMonto.credito)  || 0,
+    efectivo:       parseFloat(pagosPorMonto.efectivo) || 0,
+    debito:         parseFloat(pagosPorMonto.debito)   || 0,
+    credito:        parseFloat(pagosPorMonto.credito)  || 0,
+    transferencia:  parseFloat(pagosPorMonto.transferencia || 0)
   };
 }
 
@@ -1021,17 +1070,25 @@ function getPagosFinales(total) {
 
 function totalPagosManual() {
   const p = calcularPagosManual();
-  return p.efectivo + p.debito + p.credito;
+  return p.efectivo + p.debito + p.credito + p.transferencia;
 }
 function setModoCobro(modo) {
   modoCobro = modo === "monto" ? "monto" : "producto";
-  if (modoCobro === "monto" && !["efectivo", "debito", "credito"].some(k => pagosPorMonto[k] !== "")) {
+  if (modoCobro === "monto" && !["efectivo", "debito", "credito", "transferencia"].some(k => pagosPorMonto[k] !== "")) {
     const total = calcularTotalActual();
     const p = calcularPagosPorProducto(total);
+    /*
     pagosPorMonto = {
       efectivo: p.efectivo ? String(Math.round(p.efectivo)) : "",
       debito:   p.debito   ? String(Math.round(p.debito))   : "",
       credito:  p.credito  ? String(Math.round(p.credito))  : "",
+    };
+    */
+    pagosPorMonto = {
+      efectivo: p.efectivo ? String(Math.round(p.efectivo)) : "",
+      debito:   p.debito ? String(Math.round(p.debito)) : "",
+      credito:  p.credito ? String(Math.round(p.credito)) : "",
+      transferencia: p.transferencia ? String(Math.round(p.transferencia)) : "",
     };
   }
   renderCartItems();
@@ -1040,7 +1097,7 @@ function setModoCobro(modo) {
 
 
 function limpiarPagosPorMonto() {
-  pagosPorMonto = { efectivo: "", debito: "", credito: "" };
+  pagosPorMonto = { efectivo: "", debito: "", credito: "", transferencia: "" };
   modoCobro = "producto";
   renderCartItems();
   actualizarResumenPagos(calcularTotalActual());
@@ -1076,12 +1133,19 @@ function actualizarResumenPagos(total) {
   const fila = (monto, qty, cls, label) => monto > 0
     ? `<div class="pago-resumen-row"><span class="pr-label ${cls}">${label}</span><span class="pr-qty">${qty} prod.</span><span>${fmt(monto)}</span></div>`
     : "";
+  /*
   const rows = [
     fila(pagosProducto.efectivo, calcQty("efectivo"), "efe", "Efectivo"),
     fila(pagosProducto.debito,   calcQty("debito"),   "deb", "Débito"),
     fila(pagosProducto.credito,  calcQty("credito"),  "cre", "Crédito"),
   ].filter(Boolean).join("");
-
+  */
+  const rows = [
+    fila(pagosProducto.efectivo, calcQty("efectivo"), "efe", "Efectivo"),
+    fila(pagosProducto.debito, calcQty("debito"), "deb", "Débito"),
+    fila(pagosProducto.credito, calcQty("credito"), "cre", "Crédito"),
+    fila(pagosProducto.transferencia, calcQty("transferencia"), "tra", "Transferencia"),
+  ].filter(Boolean).join("");
   const modoMonto = modoCobro === "monto";
   resumenEl.innerHTML = `
     <div class="modo-cobro-bar">
@@ -1100,6 +1164,7 @@ function actualizarResumenPagos(total) {
           <label><span>Efectivo</span><input class="pago-monto-input" data-pago-monto="efectivo" type="number" min="0" step="1" placeholder="0" value="${pagosPorMonto.efectivo}"></label>
           <label><span>Débito</span><input class="pago-monto-input" data-pago-monto="debito" type="number" min="0" step="1" placeholder="0" value="${pagosPorMonto.debito}"></label>
           <label><span>Crédito</span><input class="pago-monto-input" data-pago-monto="credito" type="number" min="0" step="1" placeholder="0" value="${pagosPorMonto.credito}"></label>
+          <label><span>Transferencia</span><input class="pago-monto-input" data-pago-monto="transferencia" type="number" min="0" step="1" placeholder="0" value="${pagosPorMonto.transferencia}" ></label>
         </div>
         <div id="pagoMontoEstado" class="pago-monto-estado"></div>
       </div>`}
@@ -1267,7 +1332,7 @@ async function cobrarVenta() {
 
   // Resumen de pagos por método. Si se cargaron montos manuales, tienen prioridad.
   const pagos = getPagosFinales(total);
-  const sumaPagos = pagos.efectivo + pagos.debito + pagos.credito;
+  const sumaPagos = pagos.efectivo + pagos.debito + pagos.credito + pagos.transferencia;
   if (pagosPorMontoActivos() && Math.abs(sumaPagos - total) > 0.01) {
     showToast(`Los montos de pago deben sumar ${fmt(total)}`, "error");
     return;
@@ -1297,7 +1362,7 @@ async function cobrarVenta() {
     document.getElementById("discount").value     = "";
     document.getElementById("discountDesc").value = "";
     currentDiscount = 0;
-    pagosPorMonto = { efectivo: "", debito: "", credito: "" };
+    pagosPorMonto = { efectivo: "", debito: "", credito: "", transferencia: "" };
     modoCobro = "producto";
     localStorage.removeItem("carrito");
     updateTotal();
@@ -1479,21 +1544,23 @@ function renderReporte() {
     if (!ventasUnicas.has(v.ventaId)) ventasUnicas.set(v.ventaId, v);
   });
 
-  let efectivo = 0, debito = 0, credito = 0;
+  let efectivo = 0, debito = 0, credito = 0, transferencia = 0;
   ventasUnicas.forEach(v => {
     if (v.pagos && typeof v.pagos === "object") {
       // Venta nueva: usar desglose real por método
-      efectivo += Math.max(parseFloat(v.pagos.efectivo) || 0, 0);
-      debito   += Math.max(parseFloat(v.pagos.debito)   || 0, 0);
-      credito  += Math.max(parseFloat(v.pagos.credito)  || 0, 0);
+      efectivo      += Math.max(parseFloat(v.pagos.efectivo)      || 0, 0);
+      debito        += Math.max(parseFloat(v.pagos.debito)        || 0, 0);
+      credito       += Math.max(parseFloat(v.pagos.credito)       || 0, 0);
+      transferencia += Math.max(parseFloat(v.pagos.transferencia) || 0, 0);
     } else {
       // Venta vieja: todo al método único registrado
       const monto = Math.max(parseFloat(v.ventaTotal) || 0, 0);
       const m = String(v.metodo || "").toLowerCase();
-      if (m === "efectivo")     efectivo += monto;
-      else if (m === "debito")  debito   += monto;
-      else if (m === "credito") credito  += monto;
-      else                      efectivo += monto; // fallback
+      if (m === "efectivo")              efectivo      += monto;
+      else if (m === "debito")           debito        += monto;
+      else if (m === "credito")          credito       += monto;
+      else if (m === "transferencia")    transferencia += monto;
+      else                               efectivo      += monto; // fallback
     }
   });
 
@@ -1523,10 +1590,11 @@ function renderReporte() {
     <div class="summary-grid">
       <div class="summary-card green">
         <div class="summary-label">Total vendido</div>
-        <div class="summary-value">${fmt(efectivo + debitoNeto + creditoNeto)}</div>
+        <div class="summary-value">${fmt(efectivo + transferencia + debitoNeto + creditoNeto)}</div>
         <div class="summary-sub">cobrado ${fmt(totalVentas)} · <span class="summary-rebaja">−${fmt(debitoDescuento + creditoDescuento)} IVA</span></div>
       </div>
       <div class="summary-card blue"><div class="summary-label">Efectivo</div><div class="summary-value">${fmt(efectivo)}</div></div>
+      <div class="summary-card orange"><div class="summary-label">Transferencia</div><div class="summary-value">${fmt(transferencia)}</div></div>
       <div class="summary-card blue">
         <div class="summary-label">Débito <span class="summary-ley-badge">Ley 17.934 · ${IVA_REBAJA_DEBITO} pts IVA</span></div>
         <div class="summary-value">${fmt(debitoNeto)}</div>
@@ -1581,18 +1649,19 @@ function renderVentasAgrupadas(ventas) {
   container.innerHTML = visible.map((g, idx) => {
     const metodo     = String(g.metodo || "").toLowerCase();
     const esMixto    = g.pagos && typeof g.pagos === "object" &&
-                       [g.pagos.efectivo, g.pagos.debito, g.pagos.credito].filter(x => parseFloat(x) > 0).length > 1;
+                       [g.pagos.efectivo, g.pagos.debito, g.pagos.credito, g.pagos.transferencia].filter(x => parseFloat(x) > 0).length > 1;
 
     // Badge de método: si es mixto mostrar los tres métodos activos
     let badgeHtml;
     if (esMixto) {
       const partes = [];
-      if (parseFloat(g.pagos.efectivo) > 0) partes.push(`<span class="badge-metodo badge-efectivo">Efe ${fmt(g.pagos.efectivo)}</span>`);
-      if (parseFloat(g.pagos.debito)   > 0) partes.push(`<span class="badge-metodo badge-debito">Déb ${fmt(g.pagos.debito)}</span>`);
-      if (parseFloat(g.pagos.credito)  > 0) partes.push(`<span class="badge-metodo badge-credito">Cré ${fmt(g.pagos.credito)}</span>`);
+      if (parseFloat(g.pagos.efectivo)      > 0) partes.push(`<span class="badge-metodo badge-efectivo">Efe ${fmt(g.pagos.efectivo)}</span>`);
+      if (parseFloat(g.pagos.debito)        > 0) partes.push(`<span class="badge-metodo badge-debito">Déb ${fmt(g.pagos.debito)}</span>`);
+      if (parseFloat(g.pagos.credito)       > 0) partes.push(`<span class="badge-metodo badge-credito">Cré ${fmt(g.pagos.credito)}</span>`);
+      if (parseFloat(g.pagos.transferencia) > 0) partes.push(`<span class="badge-metodo badge-transferencia">Transf ${fmt(g.pagos.transferencia)}</span>`);
       badgeHtml = partes.join(" ");
     } else {
-      const badgeClass = metodo === "efectivo" ? "badge-efectivo" : metodo === "debito" ? "badge-debito" : metodo === "credito" ? "badge-credito" : "";
+      const badgeClass = metodo === "efectivo" ? "badge-efectivo" : metodo === "debito" ? "badge-debito" : metodo === "credito" ? "badge-credito" : metodo === "transferencia" ? "badge-transferencia" : "";
       badgeHtml = `<span class="badge-metodo ${badgeClass}">${g.metodo || "-"}</span>`;
     }
 
@@ -3416,19 +3485,21 @@ function renderCruce() {
   });
 
   // ── Desglose ingresos por método de pago (igual que renderReporte) ──
-  let efectivo = 0, debito = 0, credito = 0;
+  let efectivo = 0, debito = 0, credito = 0, transferencia = 0;
   ventasFiltradas.forEach(v => {
     if (v.pagos && typeof v.pagos === "object") {
-      efectivo += Math.max(parseFloat(v.pagos.efectivo) || 0, 0);
-      debito   += Math.max(parseFloat(v.pagos.debito)   || 0, 0);
-      credito  += Math.max(parseFloat(v.pagos.credito)  || 0, 0);
+      efectivo      += Math.max(parseFloat(v.pagos.efectivo)      || 0, 0);
+      debito        += Math.max(parseFloat(v.pagos.debito)        || 0, 0);
+      credito       += Math.max(parseFloat(v.pagos.credito)       || 0, 0);
+      transferencia += Math.max(parseFloat(v.pagos.transferencia) || 0, 0);
     } else {
       const monto = Math.max(parseFloat(v.ventaTotal) || 0, 0);
       const m = String(v.metodo || "").toLowerCase();
-      if (m === "efectivo")     efectivo += monto;
-      else if (m === "debito")  debito   += monto;
-      else if (m === "credito") credito  += monto;
-      else                      efectivo += monto;
+      if (m === "efectivo")              efectivo      += monto;
+      else if (m === "debito")           debito        += monto;
+      else if (m === "credito")          credito       += monto;
+      else if (m === "transferencia")    transferencia += monto;
+      else                               efectivo      += monto;
     }
   });
 
@@ -3441,14 +3512,14 @@ function renderCruce() {
   const totalDescuentoIVA = debitoDescuento + creditoDescuento;
 
   // ── KPIs finales ──
-  const totalIngresos = efectivo + debitoNeto + creditoNeto;  // ingresos reales netos de IVA rebajado
+  const totalIngresos = efectivo + transferencia + debitoNeto + creditoNeto;  // ingresos reales netos de IVA rebajado
   const totalGastos   = gastos.reduce((s, g) => s + (parseFloat(g.total) || 0), 0);
   const balance       = totalIngresos - totalGastos;
   const margen        = totalIngresos > 0 ? (balance / totalIngresos * 100) : 0;
   const balColor      = balance >= 0 ? "#16a34a" : "#dc2626";
   const balBg         = balance >= 0 ? "#f0fdf4" : "#fef2f2";
   const balBorder     = balance >= 0 ? "#bbf7d0" : "#fecaca";
-  const cobradoBruto  = efectivo + debito + credito;
+  const cobradoBruto  = efectivo + transferencia + debito + credito;
 
   // ── Cruce por día (usando ingreso neto por día) ──
   const diasMap = {};
@@ -3462,10 +3533,12 @@ function renderCruce() {
 
     let netoVenta = 0;
     if (v.pagos && typeof v.pagos === "object") {
-      const ef = Math.max(parseFloat(v.pagos.efectivo) || 0, 0);
-      const db = Math.max(parseFloat(v.pagos.debito)   || 0, 0);
-      const cr = Math.max(parseFloat(v.pagos.credito)  || 0, 0);
+      const ef = Math.max(parseFloat(v.pagos.efectivo)      || 0, 0);
+      const db = Math.max(parseFloat(v.pagos.debito)        || 0, 0);
+      const cr = Math.max(parseFloat(v.pagos.credito)       || 0, 0);
+      const tr = Math.max(parseFloat(v.pagos.transferencia) || 0, 0);
       netoVenta = ef
+        + tr
         + db * (1 - IVA_REBAJA_DEBITO  / divisorIVA)
         + cr * (1 - IVA_REBAJA_CREDITO / divisorIVA);
     } else {
@@ -3559,10 +3632,15 @@ function renderCruce() {
     <!-- Detalle IVA ley inclusión financiera -->
     <div class="gr-por-rubro-card" style="padding:12px 14px;">
       <h3 style="margin-bottom:10px;">Rebaja IVA · Ley inclusión financiera</h3>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:12px;">
+      <div style="display:grid;grid-template-columns:repeat(4, minmax(0, 1fr));gap:8px;font-size:12px;">
         <div style="background:#f8fafc;border-radius:8px;padding:10px;border:1px solid #e2e8f0;">
           <div style="color:#64748b;font-size:10px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;">Efectivo</div>
           <div style="font-weight:700;color:#0f172a;">${fmtUYU(efectivo)}</div>
+          <div style="color:#94a3b8;font-size:10px;margin-top:2px;">sin rebaja</div>
+        </div>
+        <div style="background:#fff7ed;border-radius:8px;padding:10px;border:1px solid #fed7aa;">
+          <div style="color:#c2410c;font-size:10px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;">Transferencia</div>
+          <div style="font-weight:700;color:#0f172a;">${fmtUYU(transferencia)}</div>
           <div style="color:#94a3b8;font-size:10px;margin-top:2px;">sin rebaja</div>
         </div>
         <div style="background:#eff6ff;border-radius:8px;padding:10px;border:1px solid #bfdbfe;">

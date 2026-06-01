@@ -137,3 +137,130 @@
 .gr-rubro-row:last-child { border-bottom: none; }
 .gr-rubro-name  { font-weight: 600; color: var(--fg, #334155); }
 .gr-rubro-total { font-weight: 800; color: var(--red, #dc2626); }
+/* ── Mejoras visuales del reporte Ingresos vs Gastos en modo oscuro ── */
+[data-theme="dark"] .gastos-report-panel {
+  background:
+    radial-gradient(circle at 14% 0%, rgba(59,130,246,.12), transparent 28%),
+    linear-gradient(180deg, #0b1220 0%, #101827 100%) !important;
+}
+[data-theme="dark"] .gastos-header {
+  background: rgba(15, 23, 42, .92) !important;
+  border-bottom: 1px solid rgba(148, 163, 184, .14) !important;
+  box-shadow: 0 12px 28px rgba(0,0,0,.18);
+}
+[data-theme="dark"] .gastos-header-title {
+  color: #f8fafc !important;
+  text-shadow: 0 1px 10px rgba(255,255,255,.06);
+}
+[data-theme="dark"] .gastos-body {
+  background: transparent !important;
+}
+[data-theme="dark"] .filter-card,
+[data-theme="dark"] .gr-table-card,
+[data-theme="dark"] .gr-por-rubro-card {
+  background: linear-gradient(145deg, rgba(15,23,42,.96), rgba(30,41,59,.72)) !important;
+  border: 1px solid rgba(148, 163, 184, .18) !important;
+  box-shadow: 0 18px 40px rgba(0,0,0,.22);
+}
+[data-theme="dark"] .filter-card h3,
+[data-theme="dark"] .gr-table-card h3,
+[data-theme="dark"] .gr-por-rubro-card h3 {
+  color: #f8fafc !important;
+  border-bottom-color: rgba(148, 163, 184, .18) !important;
+}
+[data-theme="dark"] .filter-group label,
+[data-theme="dark"] .gr-summary-label {
+  color: #a8c0df !important;
+}
+[data-theme="dark"] .filter-group input {
+  background: rgba(2, 6, 23, .48) !important;
+  border-color: rgba(148, 163, 184, .22) !important;
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .qf-btn {
+  background: rgba(15, 23, 42, .72) !important;
+  border-color: rgba(148, 163, 184, .22) !important;
+  color: #bfdbfe !important;
+}
+[data-theme="dark"] .qf-btn.active,
+[data-theme="dark"] .filter-apply-btn {
+  background: linear-gradient(135deg, #2563eb, #3b82f6) !important;
+  border-color: transparent !important;
+  color: #fff !important;
+  box-shadow: 0 10px 22px rgba(37,99,235,.24);
+}
+[data-theme="dark"] #cruceContent .gr-summary-grid .gr-summary-card {
+  min-height: 98px;
+  border-radius: 16px !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 16px 30px rgba(0,0,0,.20);
+}
+[data-theme="dark"] #cruceContent .gr-summary-grid .gr-summary-card:nth-child(1) {
+  background: linear-gradient(135deg, rgba(20,83,45,.62), rgba(6,78,59,.20)) !important;
+  border-color: rgba(34,197,94,.28) !important;
+}
+[data-theme="dark"] #cruceContent .gr-summary-grid .gr-summary-card:nth-child(2) {
+  background: linear-gradient(135deg, rgba(127,29,29,.58), rgba(76,5,25,.20)) !important;
+  border-color: rgba(239,68,68,.30) !important;
+}
+[data-theme="dark"] #cruceContent .gr-summary-grid .gr-summary-card:nth-child(3) {
+  background: linear-gradient(135deg, rgba(20,83,45,.62), rgba(6,78,59,.20)) !important;
+  border-color: rgba(34,197,94,.28) !important;
+}
+[data-theme="dark"] #cruceContent .gr-summary-grid .gr-summary-card:nth-child(4) {
+  background: linear-gradient(135deg, rgba(30,64,175,.46), rgba(30,41,59,.24)) !important;
+  border-color: rgba(59,130,246,.28) !important;
+}
+[data-theme="dark"] #cruceContent .gr-summary-grid .gr-summary-card > div:last-child {
+  color: #a8c0df !important;
+}
+[data-theme="dark"] #cruceContent .gr-por-rubro-card[style*="padding"] > div[style*="grid-template-columns"] > div {
+  background: rgba(15, 23, 42, .70) !important;
+  border-color: rgba(148, 163, 184, .20) !important;
+  border-radius: 12px !important;
+}
+[data-theme="dark"] #cruceContent .gr-por-rubro-card[style*="padding"] > div[style*="grid-template-columns"] > div:nth-child(1) {
+  background: linear-gradient(135deg, rgba(20,83,45,.56), rgba(15,23,42,.72)) !important;
+  border-color: rgba(34,197,94,.28) !important;
+}
+[data-theme="dark"] #cruceContent .gr-por-rubro-card[style*="padding"] > div[style*="grid-template-columns"] > div:nth-child(2) {
+  background: linear-gradient(135deg, rgba(146,64,14,.48), rgba(15,23,42,.72)) !important;
+  border-color: rgba(245,158,11,.30) !important;
+}
+[data-theme="dark"] #cruceContent .gr-por-rubro-card[style*="padding"] > div[style*="grid-template-columns"] > div:nth-child(3) {
+  background: linear-gradient(135deg, rgba(30,64,175,.48), rgba(15,23,42,.72)) !important;
+  border-color: rgba(59,130,246,.30) !important;
+}
+[data-theme="dark"] #cruceContent .gr-por-rubro-card[style*="padding"] > div[style*="grid-template-columns"] > div:nth-child(4) {
+  background: linear-gradient(135deg, rgba(88,28,135,.48), rgba(15,23,42,.72)) !important;
+  border-color: rgba(168,85,247,.30) !important;
+}
+[data-theme="dark"] #cruceContent .gr-por-rubro-card[style*="padding"] > div[style*="grid-template-columns"] > div div[style*="color:#0f172a"] {
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .gr-table-card > div[style*="background:#f1f5f9"] {
+  background: rgba(30, 41, 59, .82) !important;
+  color: #a8c0df !important;
+}
+[data-theme="dark"] .gr-table-card div[style*="border-bottom:1px solid"] {
+  border-bottom-color: rgba(148,163,184,.14) !important;
+}
+[data-theme="dark"] .gr-table-card span[style*="color:#475569"] {
+  color: #cbd5e1 !important;
+}
+[data-theme="dark"] .report-empty,
+[data-theme="dark"] .report-loading {
+  color: #a8c0df !important;
+}
+@media (max-width: 720px) {
+  [data-theme="dark"] #cruceContent .gr-por-rubro-card[style*="padding"] > div[style*="grid-template-columns"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+/* En teléfonos, mantener en modo claro el mismo orden 2x2 que en modo oscuro
+   para las cards de Rebaja IVA / Ley inclusión financiera. */
+@media (max-width: 720px) {
+  #cruceContent .gr-por-rubro-card[style*="padding"] > div[style*="grid-template-columns"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}

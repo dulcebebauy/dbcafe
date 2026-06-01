@@ -780,7 +780,8 @@ body {
 .cart-group[data-metodo="efectivo"] { border-left-color: #16a34a; }
 .cart-group[data-metodo="debito"]   { border-left-color: #2563eb; }
 .cart-group[data-metodo="credito"]  { border-left-color: #7c3aed; }
-.cart-group[data-metodo="mixto"]    { border-left-color: #d97706; }
+.cart-group[data-metodo="mixto"]    { border-left-color: #d90606; }
+.cart-group[data-metodo="transferencia"]{border-left-color: #f97316;}
 
 .cart-group .cart-item {
   margin-bottom: 0;
@@ -1541,6 +1542,8 @@ body {
 
 .summary-card.green .summary-value { color: var(--green); }
 .summary-card.blue  .summary-value { color: var(--blue); }
+/*.summary-card.orange { background: #fff7ed; border-color: #fed7aa; }*/
+.summary-card.orange .summary-value { color: #c2410c; }
 .summary-card.purple .summary-value { color: var(--purple); }
 
 .summary-sub {
@@ -1756,6 +1759,7 @@ body {
 .badge-efectivo { background: var(--success-border, #d1fae5); color: #065f46; }
 .badge-debito   { background: var(--info-bg, #dbeafe); color: var(--primary, #1e40af); }
 .badge-credito  { background: var(--info-bg, #ede9fe); color: #5b21b6; }
+.badge-transferencia { background: #ffedd5; color: #9a3412; }
 
 .report-loading {
   display: flex;
@@ -2134,6 +2138,11 @@ body {
   color: #fff;
   border-color: #6d28d9;
 }
+.mp-chip.active-transferencia{
+  background:#f97316;
+  border-color:#f97316;
+  color:#fff;
+}
 
 /* Hover estados inactivos */
 .mp-chip:not([class*="active-"]):hover {
@@ -2194,11 +2203,13 @@ body {
 .pr-label.efe { background: #dcfce7; color: #166534; }
 .pr-label.deb { background: #dbeafe; color: #1d4ed8; }
 .pr-label.cre { background: #ede9fe; color: #6d28d9; }
+.pr-label.tra { background: #ede9fe; color: #f97316;}
 
 [data-theme="dark"] .pago-resumen { background: var(--surface); }
 [data-theme="dark"] .pr-label.efe { background: #14532d; color: #86efac; }
 [data-theme="dark"] .pr-label.deb { background: #1e3a5f; color: #93c5fd; }
 [data-theme="dark"] .pr-label.cre { background: #3b1f6b; color: #c4b5fd; }
+[data-theme="dark"] .pr-label.tra { background: #b14a00; color: #f8bd93; }
 
 /* Cobro por monto dentro del carrito */
 .pago-resumen-titulo {
@@ -2216,7 +2227,7 @@ body {
 }
 .pago-monto-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 6px;
 }
 .pago-monto-grid label {
@@ -2318,4 +2329,160 @@ body {
   .modo-cobro-bar { align-items: flex-start; flex-direction: column; gap: 4px; }
   .modo-cobro-toggle { width: 100%; }
   .modo-cobro-btn { flex: 1; }
+}
+/* ===== REPORTE DE INGRESOS: cards en modo oscuro ===== */
+[data-theme="dark"] #reportContent .summary-card {
+  background: linear-gradient(135deg, #111827 0%, #1e293b 100%);
+  border-color: #334155;
+  color: #e2e8f0;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.22);
+}
+
+[data-theme="dark"] #reportContent .summary-card.green {
+  background: linear-gradient(135deg, #0b2a20 0%, #12382d 100%);
+  border-color: #1f5c48;
+}
+
+[data-theme="dark"] #reportContent .summary-card.blue {
+  background: linear-gradient(135deg, #10213a 0%, #172f4f 100%);
+  border-color: #2f5ea8;
+}
+
+[data-theme="dark"] #reportContent .summary-card.orange {
+  background: linear-gradient(135deg, #2b2113 0%, #3a2a14 100%);
+  border-color: #b57a28;
+}
+
+[data-theme="dark"] #reportContent .summary-card.purple {
+  background: linear-gradient(135deg, #211633 0%, #2d1f47 100%);
+  border-color: #6d4ab6;
+}
+
+[data-theme="dark"] #reportContent .summary-card .summary-label {
+  color: #a9bbd3;
+}
+
+[data-theme="dark"] #reportContent .summary-card.green .summary-value {
+  color: #34d399;
+}
+
+[data-theme="dark"] #reportContent .summary-card.blue .summary-value {
+  color: #60a5fa;
+}
+
+[data-theme="dark"] #reportContent .summary-card.orange .summary-value {
+  color: #f59e0b;
+}
+
+[data-theme="dark"] #reportContent .summary-card.purple .summary-value {
+  color: #a78bfa;
+}
+
+[data-theme="dark"] #reportContent .summary-sub {
+  color: #9fb0c7;
+}
+
+[data-theme="dark"] #reportContent .summary-rebaja {
+  color: #f87171;
+}
+
+[data-theme="dark"] #reportContent .summary-ley-badge {
+  background: rgba(148, 163, 184, 0.16);
+  color: #cbd5e1;
+}
+
+/* ===== CARRITO MOBILE: evitar que 'Transf' se solape con cantidad ===== */
+.cart-item {
+  overflow: hidden;
+}
+
+.mp-chips {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+@media (max-width: 480px) {
+  .drawer-items {
+    padding: 8px 12px;
+  }
+
+  .cart-item {
+    gap: 6px;
+    padding: 8px 8px;
+    align-items: flex-start;
+  }
+
+  .ci-info {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .mp-chips {
+    flex-wrap: wrap;
+    gap: 3px;
+    padding-right: 2px;
+  }
+
+  .mp-chip {
+    padding: 2px 6px;
+    font-size: 9px;
+    line-height: 1.45;
+  }
+
+  .qty-ctrl {
+    flex: 0 0 auto;
+    align-self: center;
+    padding: 2px;
+  }
+
+  .qty-btn {
+    width: 26px;
+    height: 26px;
+  }
+
+  .qty-val {
+    width: 24px;
+    font-size: 13px;
+  }
+
+  .ci-total {
+    width: 48px;
+    font-size: 11px;
+    align-self: center;
+  }
+
+  .ci-remove {
+    width: 24px;
+    height: 24px;
+    align-self: center;
+  }
+}
+
+@media (max-width: 360px) {
+  .cart-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      "info info remove"
+      "qty total remove";
+    row-gap: 6px;
+    column-gap: 8px;
+  }
+
+  .ci-info { grid-area: info; }
+  .qty-ctrl { grid-area: qty; justify-self: start; }
+  .ci-total { grid-area: total; justify-self: end; width: auto; }
+  .ci-remove { grid-area: remove; align-self: center; }
+}
+
+/* ===== REPORTE DE VENTAS MOBILE: Total vendido ancho completo ===== */
+@media (max-width: 599px) {
+  #reportContent .summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #reportContent .summary-grid .summary-card:first-child {
+    grid-column: 1 / -1;
+  }
 }
