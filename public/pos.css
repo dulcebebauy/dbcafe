@@ -1542,6 +1542,8 @@ body {
 
 .summary-card.green .summary-value { color: var(--green); }
 .summary-card.blue  .summary-value { color: var(--blue); }
+.summary-card.orange { background: #fff7ed; border-color: #fed7aa; }
+.summary-card.orange .summary-value { color: #c2410c; }
 .summary-card.purple .summary-value { color: var(--purple); }
 
 .summary-sub {
@@ -1757,6 +1759,7 @@ body {
 .badge-efectivo { background: var(--success-border, #d1fae5); color: #065f46; }
 .badge-debito   { background: var(--info-bg, #dbeafe); color: var(--primary, #1e40af); }
 .badge-credito  { background: var(--info-bg, #ede9fe); color: #5b21b6; }
+.badge-transferencia { background: #ffedd5; color: #9a3412; }
 
 .report-loading {
   display: flex;
@@ -2326,4 +2329,64 @@ body {
   .modo-cobro-bar { align-items: flex-start; flex-direction: column; gap: 4px; }
   .modo-cobro-toggle { width: 100%; }
   .modo-cobro-btn { flex: 1; }
+}
+/* ===== REPORTE DE INGRESOS: cards en modo oscuro ===== */
+[data-theme="dark"] #reportContent .summary-card {
+  background: linear-gradient(135deg, #111827 0%, #1e293b 100%);
+  border-color: #334155;
+  color: #e2e8f0;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.22);
+}
+
+[data-theme="dark"] #reportContent .summary-card.green {
+  background: linear-gradient(135deg, #0b2a20 0%, #12382d 100%);
+  border-color: #1f5c48;
+}
+
+[data-theme="dark"] #reportContent .summary-card.blue {
+  background: linear-gradient(135deg, #10213a 0%, #172f4f 100%);
+  border-color: #2f5ea8;
+}
+
+[data-theme="dark"] #reportContent .summary-card.orange {
+  background: linear-gradient(135deg, #2b2113 0%, #3a2a14 100%);
+  border-color: #b57a28;
+}
+
+[data-theme="dark"] #reportContent .summary-card.purple {
+  background: linear-gradient(135deg, #211633 0%, #2d1f47 100%);
+  border-color: #6d4ab6;
+}
+
+[data-theme="dark"] #reportContent .summary-card .summary-label {
+  color: #a9bbd3;
+}
+
+[data-theme="dark"] #reportContent .summary-card.green .summary-value {
+  color: #34d399;
+}
+
+[data-theme="dark"] #reportContent .summary-card.blue .summary-value {
+  color: #60a5fa;
+}
+
+[data-theme="dark"] #reportContent .summary-card.orange .summary-value {
+  color: #f59e0b;
+}
+
+[data-theme="dark"] #reportContent .summary-card.purple .summary-value {
+  color: #a78bfa;
+}
+
+[data-theme="dark"] #reportContent .summary-sub {
+  color: #9fb0c7;
+}
+
+[data-theme="dark"] #reportContent .summary-rebaja {
+  color: #f87171;
+}
+
+[data-theme="dark"] #reportContent .summary-ley-badge {
+  background: rgba(148, 163, 184, 0.16);
+  color: #cbd5e1;
 }
