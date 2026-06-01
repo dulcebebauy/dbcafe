@@ -2390,3 +2390,88 @@ body {
   background: rgba(148, 163, 184, 0.16);
   color: #cbd5e1;
 }
+
+/* ===== CARRITO MOBILE: evitar que 'Transf' se solape con cantidad ===== */
+.cart-item {
+  overflow: hidden;
+}
+
+.mp-chips {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+@media (max-width: 480px) {
+  .drawer-items {
+    padding: 8px 12px;
+  }
+
+  .cart-item {
+    gap: 6px;
+    padding: 8px 8px;
+    align-items: flex-start;
+  }
+
+  .ci-info {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .mp-chips {
+    flex-wrap: wrap;
+    gap: 3px;
+    padding-right: 2px;
+  }
+
+  .mp-chip {
+    padding: 2px 6px;
+    font-size: 9px;
+    line-height: 1.45;
+  }
+
+  .qty-ctrl {
+    flex: 0 0 auto;
+    align-self: center;
+    padding: 2px;
+  }
+
+  .qty-btn {
+    width: 26px;
+    height: 26px;
+  }
+
+  .qty-val {
+    width: 24px;
+    font-size: 13px;
+  }
+
+  .ci-total {
+    width: 48px;
+    font-size: 11px;
+    align-self: center;
+  }
+
+  .ci-remove {
+    width: 24px;
+    height: 24px;
+    align-self: center;
+  }
+}
+
+@media (max-width: 360px) {
+  .cart-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      "info info remove"
+      "qty total remove";
+    row-gap: 6px;
+    column-gap: 8px;
+  }
+
+  .ci-info { grid-area: info; }
+  .qty-ctrl { grid-area: qty; justify-self: start; }
+  .ci-total { grid-area: total; justify-self: end; width: auto; }
+  .ci-remove { grid-area: remove; align-self: center; }
+}
