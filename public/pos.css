@@ -780,7 +780,7 @@ body {
 .cart-group[data-metodo="efectivo"] { border-left-color: #16a34a; }
 .cart-group[data-metodo="debito"]   { border-left-color: #2563eb; }
 .cart-group[data-metodo="credito"]  { border-left-color: #7c3aed; }
-.cart-group[data-metodo="mixto"]    { border-left-color: #d90606; }
+.cart-group[data-metodo="mixto"]    { border-left-color: #7b7b7b; }
 .cart-group[data-metodo="transferencia"]{border-left-color: #f97316;}
 
 .cart-group .cart-item {
