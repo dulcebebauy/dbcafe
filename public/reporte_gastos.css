@@ -44,11 +44,15 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  box-shadow: 0 1px 4px rgba(15,23,42,.06);
 }
 .gr-summary-label { font-size: 11px; font-weight: 600; color: var(--muted-fg, #94a3b8); text-transform: uppercase; letter-spacing: .5px; }
 .gr-summary-value { font-size: 20px; font-weight: 800; color: var(--fg, #0f172a); }
+.gr-summary-card.red   { background: #fef2f2; border-color: #fecaca; }
 .gr-summary-card.red   .gr-summary-value { color: var(--red, #dc2626); }
+.gr-summary-card.blue  { background: #eff6ff; border-color: #bfdbfe; }
 .gr-summary-card.blue  .gr-summary-value { color: var(--primary, #1d4ed8); }
+.gr-summary-card.green { background: #f0fdf4; border-color: #bbf7d0; }
 .gr-summary-card.green .gr-summary-value { color: var(--green, #16a34a); }
 
 .gr-table-card {
@@ -284,4 +288,60 @@
 #cruceContent .gr-clickable-card:focus-visible {
   outline: 2px solid #3b82f6;
   outline-offset: 3px;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DARK MODE — Reporte Gastos summary cards (unificado con cruce)
+══════════════════════════════════════════════════════════════ */
+[data-theme="dark"] #gastosReportContent .gr-summary-card {
+  border-radius: 16px !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 16px 30px rgba(0,0,0,.20);
+}
+[data-theme="dark"] #gastosReportContent .gr-summary-card.red {
+  background: linear-gradient(135deg, rgba(127,29,29,.58), rgba(76,5,25,.20)) !important;
+  border-color: rgba(239,68,68,.30) !important;
+}
+[data-theme="dark"] #gastosReportContent .gr-summary-card.red .gr-summary-value {
+  color: #f87171 !important;
+}
+[data-theme="dark"] #gastosReportContent .gr-summary-card.blue {
+  background: linear-gradient(135deg, rgba(30,64,175,.46), rgba(30,41,59,.24)) !important;
+  border-color: rgba(59,130,246,.28) !important;
+}
+[data-theme="dark"] #gastosReportContent .gr-summary-card.blue .gr-summary-value {
+  color: #60a5fa !important;
+}
+[data-theme="dark"] #gastosReportContent .gr-summary-card.green {
+  background: linear-gradient(135deg, rgba(20,83,45,.62), rgba(6,78,59,.20)) !important;
+  border-color: rgba(34,197,94,.28) !important;
+}
+[data-theme="dark"] #gastosReportContent .gr-summary-card.green .gr-summary-value {
+  color: #34d399 !important;
+}
+[data-theme="dark"] #gastosReportContent .gr-summary-label {
+  color: #a8c0df !important;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DARK MODE — Reporte Ingresos summary cards (unificado con cruce)
+══════════════════════════════════════════════════════════════ */
+[data-theme="dark"] #reportContent .summary-card {
+  border-radius: 16px !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 16px 30px rgba(0,0,0,.20);
+}
+[data-theme="dark"] #reportContent .summary-card.green {
+  background: linear-gradient(135deg, rgba(20,83,45,.62), rgba(6,78,59,.20)) !important;
+  border-color: rgba(34,197,94,.28) !important;
+}
+[data-theme="dark"] #reportContent .summary-card.blue {
+  background: linear-gradient(135deg, rgba(30,64,175,.46), rgba(30,41,59,.24)) !important;
+  border-color: rgba(59,130,246,.28) !important;
+}
+[data-theme="dark"] #reportContent .summary-card.orange {
+  background: linear-gradient(135deg, rgba(146,64,14,.48), rgba(15,23,42,.72)) !important;
+  border-color: rgba(245,158,11,.30) !important;
+}
+[data-theme="dark"] #reportContent .summary-card.purple {
+  background: linear-gradient(135deg, rgba(88,28,135,.48), rgba(15,23,42,.72)) !important;
+  border-color: rgba(168,85,247,.30) !important;
 }

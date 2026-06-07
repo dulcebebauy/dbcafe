@@ -587,6 +587,7 @@ function renderProductos(lista = productos) {
     const emoji = getCategoryEmoji(p.categoria);
     const div   = document.createElement("div");
     div.className = "card" + (qty > 0 ? " in-cart" : "");
+    div.dataset.prodId = p.id;
     div.innerHTML = `
       ${emoji ? `<div class="card-emoji">${emoji}</div>` : ""}
       ${qty > 0 ? `<div class="card-qty">${qty}</div>` : ""}
@@ -662,6 +663,16 @@ function addToCart(prod) {
   applyFilters();
   saveCart();
   navigator.vibrate?.(20);
+  flashProductCard(prod.id);
+}
+
+function flashProductCard(prodId) {
+  const card = document.querySelector(`.card[data-prod-id="${prodId}"]`);
+  if (!card) return;
+  card.classList.remove("card-flash");
+  void card.offsetWidth; // reflow para reiniciar animación
+  card.classList.add("card-flash");
+  card.addEventListener("animationend", () => card.classList.remove("card-flash"), { once: true });
 }
 
 function changeQty(lineKey, delta) {
@@ -1173,6 +1184,40 @@ function actualizarResumenPagos(total) {
   actualizarEstadoPagosMonto(total);
 }
 
+function renderCartConfirmResumen() {
+  const el = document.getElementById("cartConfirmResumen");
+  if (!el) return;
+  if (carrito.length === 0) { el.style.display = "none"; return; }
+
+  // Agrupar por producto
+  const grupos = {};
+  const ordenIds = [];
+  carrito.forEach(item => {
+    if (!grupos[item.id]) { grupos[item.id] = { nombre: item.nombre, precio: item.precio, cantidad: 0 }; ordenIds.push(item.id); }
+    grupos[item.id].cantidad += item.cantidad;
+  });
+
+  const total = calcularTotalActual();
+  const filas = ordenIds.map(id => {
+    const g = grupos[id];
+    return `<div class="ccr-row">
+      <span class="ccr-qty">${g.cantidad}×</span>
+      <span class="ccr-name">${g.nombre}</span>
+      <span class="ccr-price">${fmt(g.precio * g.cantidad)}</span>
+    </div>`;
+  }).join("");
+
+  el.innerHTML = `
+    <div class="ccr-title">Resumen del pedido</div>
+    <div class="ccr-list">${filas}</div>
+    <div class="ccr-total-row">
+      <span>Total</span>
+      <span class="ccr-total-val">${fmt(total)}</span>
+    </div>
+  `;
+  el.style.display = "block";
+}
+
 function updatePayButtons() {
   const disabled = carrito.length === 0 || !puedeCobrar();
 
@@ -1301,6 +1346,50 @@ function showPayLoader(show) {
 /* ═══════════════════════════════════════
    COBRO MIXTO
 ═══════════════════════════════════════ */
+/* ═══════════════════════════════════════
+   MODAL RESUMEN PREVIO AL COBRO
+═══════════════════════════════════════ */
+function abrirResumenVenta() {
+  if (!puedeCobrar()) { showToast("No tienes permisos", "error"); return; }
+  if (carrito.length === 0) return;
+
+  const total = calcularTotalActual();
+
+  // Agrupar por producto
+  const grupos = {};
+  const ordenIds = [];
+  carrito.forEach(item => {
+    if (!grupos[item.id]) { grupos[item.id] = { nombre: item.nombre, precio: item.precio, cantidad: 0 }; ordenIds.push(item.id); }
+    grupos[item.id].cantidad += item.cantidad;
+  });
+
+  const filas = ordenIds.map(id => {
+    const g = grupos[id];
+    return `<div class="rv-row">
+      <span class="rv-qty">${g.cantidad}×</span>
+      <span class="rv-name">${escHtml(g.nombre)}</span>
+      <span class="rv-price">${fmt(g.precio * g.cantidad)}</span>
+    </div>`;
+  }).join("");
+
+  document.getElementById("rvList").innerHTML = filas;
+  document.getElementById("rvTotal").textContent = fmt(total);
+  document.getElementById("resumenVentaOverlay").classList.add("open");
+}
+
+function cerrarResumenVenta() {
+  document.getElementById("resumenVentaOverlay").classList.remove("open");
+}
+
+function handleResumenVentaOverlayClick(e) {
+  if (e.target === document.getElementById("resumenVentaOverlay")) cerrarResumenVenta();
+}
+
+function confirmarResumenVenta() {
+  cerrarResumenVenta();
+  cobrarVenta();
+}
+
 async function cobrarVenta() {
   if (!puedeCobrar()) { showToast("No tienes permisos", "error"); return; }
   if (carrito.length === 0) return;
@@ -2702,7 +2791,10 @@ document.addEventListener("DOMContentLoaded", () => {
       case "closeDrawer":            closeDrawer();                 break;
       case "abrirCambio":            abrirCambio(arg);              break;
       case "pagar":                  pagar(arg);                    break;
-      case "cobrarVenta":            cobrarVenta();                 break;
+      case "cobrarVenta":            abrirResumenVenta();           break;
+      case "confirmarResumenVenta":   confirmarResumenVenta();       break;
+      case "cerrarResumenVenta":      cerrarResumenVenta();          break;
+      case "handleResumenOverlayClick": handleResumenVentaOverlayClick(e); break;
       case "clearCart":              clearCart();                   break;
       case "limpiarPagosPorMonto":   limpiarPagosPorMonto();        break;
 
