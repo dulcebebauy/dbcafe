@@ -28,6 +28,8 @@ let adminCatFilter    = "todos";
 let pagosPorMonto     = { efectivo: "", debito: "", credito: "", transferencia: "" };
 let modoCobro         = "producto";
 let mesasTiempoTimer  = null;
+let mesaTotalesPrevios = new Map();
+let ventasHoyTotal     = 0;
 
 Object.defineProperty(window, "carrito", {
   get() { return mesaSeleccionada ? mesaSeleccionada.carrito : []; },
@@ -219,6 +221,7 @@ function showMesasScreen() {
   document.getElementById("posApp").style.display        = "none";
   document.getElementById("mesasScreen").style.display   = "flex";
   document.getElementById("reportPanel").classList.remove("open");
+  cargarVentasHoyMesas();
 
   cargarMesasSupabase().then(remotas => {
     if (remotas?.length > 0) {
@@ -415,14 +418,18 @@ function renderMesas() {
     const tiempoAbierta = ocupada ? calcularTiempoMesa(mesa.abiertaDesde) : "";
     const alertaTiempo = ocupada ? claseTiempoMesa(mesa.abiertaDesde) : "";
 
+    const totalPrevio = mesaTotalesPrevios.get(mesa.id ?? mesa.numero);
+    const debeAnimar = ocupada && totalPrevio !== undefined && totalPrevio !== total;
+    mesaTotalesPrevios.set(mesa.id ?? mesa.numero, total);
+
     const div = document.createElement("div");
-    div.className = "mesa-card" + (ocupada ? " ocupada" : "");
+    div.className = "mesa-card" + (ocupada ? " ocupada" : "") + (debeAnimar ? " mesa-flash" : "");
     div.innerHTML = `
       <div class="mesa-num">#${mesa.numero}</div>
       <div class="mesa-nombre">${mesaLabel(mesa)}</div>
-      <div class="mesa-icon">${ocupada ? "🍽️" : `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 32 32"><circle cx="16" cy="16" r="10" fill="#22c55e"/></svg>`}</div>
-      <div class="mesa-status">${ocupada ? fmt(total) : "Libre"}</div>
-      ${items > 0 ? `<div class="mesa-items">${items} ítem${items !== 1 ? "s" : ""}</div>` : ""}
+      <div class="mesa-icon">${ocupada ? "🍽️" : "🟢"}</div>
+      <div class="mesa-status">${ocupada ? `💰 ${fmt(total)}` : "Libre"}</div>
+      ${items > 0 ? `<div class="mesa-items">🧾 ${items} ítem${items !== 1 ? "s" : ""}</div>` : ""}
       ${tiempoAbierta ? `<div class="mesa-tiempo ${alertaTiempo}">⏱ ${tiempoAbierta}</div>` : ""}
       <div class="edit-hint">mantener = editar</div>
     `;
@@ -517,16 +524,41 @@ function actualizarTotalMesas() {
   const ocupadasEl = document.getElementById("mesasOcupadasTotal");
   const itemsEl = document.getElementById("mesasItemsTotal");
   const totalEl = document.getElementById("mesasMontoTotal");
+  const ventasHoyEl = document.getElementById("ventasHoyHeader");
 
   if (ocupadasEl) ocupadasEl.textContent = ocupadas;
   if (itemsEl) itemsEl.textContent = items;
   if (totalEl) totalEl.textContent = fmt(total);
+  if (ventasHoyEl) ventasHoyEl.textContent = `Hoy ${fmt(ventasHoyTotal)}`;
+}
+
+async function cargarVentasHoyMesas() {
+  try {
+    const desde = new Date();
+    desde.setHours(0, 0, 0, 0);
+    const hasta = new Date(desde);
+    hasta.setDate(hasta.getDate() + 1);
+
+    const { data, error } = await window.supabase_res
+      .from("ventas")
+      .select("total")
+      .gte("created_at", desde.toISOString())
+      .lt("created_at", hasta.toISOString());
+
+    if (error) throw error;
+    ventasHoyTotal = (data || []).reduce((sum, venta) => sum + (parseFloat(venta.total) || 0), 0);
+  } catch (e) {
+    console.error("Error cargando ventas del día:", e);
+  }
+  actualizarTotalMesas();
 }
 
 function seleccionarMesa(mesa) {
   mesaSeleccionada = mesa;
-  document.getElementById("discount").value     = mesa.descuento     || "";
-  document.getElementById("discountDesc").value = mesa.descuentoDesc || "";
+  const discountInput = document.getElementById("discount");
+  const discountDescInput = document.getElementById("discountDesc");
+  if (discountInput) discountInput.value = mesa.descuento || "";
+  if (discountDescInput) discountDescInput.value = mesa.descuentoDesc || "";
   currentDiscount = 0;
 
   document.getElementById("btnVolverMesas").style.display   = "inline-flex";
@@ -547,8 +579,10 @@ function seleccionarMesa(mesa) {
 
 function volverAMesas() {
   if (mesaSeleccionada) {
-    mesaSeleccionada.descuento     = parseFloat(document.getElementById("discount").value) || 0;
-    mesaSeleccionada.descuentoDesc = document.getElementById("discountDesc").value || "";
+    const discountInput = document.getElementById("discount");
+    const discountDescInput = document.getElementById("discountDesc");
+    mesaSeleccionada.descuento     = parseFloat(discountInput?.value) || 0;
+    mesaSeleccionada.descuentoDesc = discountDescInput?.value || "";
     guardarMesaSupabase(mesaSeleccionada).catch(e => console.error("Error guardando mesa al volver:", e));
   }
   closeDrawer();
@@ -849,8 +883,10 @@ function clearCart() {
     mesaSeleccionada.carrito = [];
     mesaSeleccionada.abiertaDesde = null;
   }
-  document.getElementById("discount").value     = "";
-  document.getElementById("discountDesc").value = "";
+  const discountInput = document.getElementById("discount");
+  const discountDescInput = document.getElementById("discountDesc");
+  if (discountInput) discountInput.value = "";
+  if (discountDescInput) discountDescInput.value = "";
   currentDiscount = 0;
   pagosPorMonto = { efectivo: "", debito: "", credito: "", transferencia: "" };
   modoCobro = "producto";
@@ -877,7 +913,7 @@ async function saveCart() {
 
     try {
       const subtotal = carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
-      const descuento = parseFloat(document.getElementById("discount").value) || 0;
+      const descuento = parseFloat(document.getElementById("discount")?.value) || 0;
       const total = subtotal - subtotal * descuento / 100;
       const carritoClonado = JSON.parse(JSON.stringify(carrito));
       const mesaVacia = carritoClonado.length === 0;
@@ -1496,7 +1532,7 @@ async function cobrarVenta() {
   if (!puedeCobrar()) { showToast("No tienes permisos", "error"); return; }
   if (carrito.length === 0) return;
 
-  const desc  = document.getElementById("discountDesc").value || "Sin descripción";
+  const desc  = document.getElementById("discountDesc")?.value || "Sin descripción";
 
   // Items con metodo_pago por línea
   const items = carrito.map(i => ({
@@ -1537,6 +1573,8 @@ async function cobrarVenta() {
 
   try {
     await guardarVentaSupabase({ mesa: mesaSeleccionada, items, subtotal, descuento: currentDiscount, total, metodo: metodoPrincipal, pagos });
+    ventasHoyTotal += total;
+    actualizarTotalMesas();
 
     const { error: errMesa } = await window.supabase_res
       .from("mesas")
@@ -1551,8 +1589,10 @@ async function cobrarVenta() {
       mesaSeleccionada.descuentoDesc = "";
       mesaSeleccionada.abiertaDesde  = null;
     }
-    document.getElementById("discount").value     = "";
-    document.getElementById("discountDesc").value = "";
+    const discountInput = document.getElementById("discount");
+    const discountDescInput = document.getElementById("discountDesc");
+    if (discountInput) discountInput.value = "";
+    if (discountDescInput) discountDescInput.value = "";
     currentDiscount = 0;
     pagosPorMonto = { efectivo: "", debito: "", credito: "", transferencia: "" };
     modoCobro = "producto";
