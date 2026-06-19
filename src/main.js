@@ -27,6 +27,7 @@ let activeCatFilter   = "todos";
 let adminCatFilter    = "todos";
 let pagosPorMonto     = { efectivo: "", debito: "", credito: "", transferencia: "" };
 let modoCobro         = "producto";
+let mesasTiempoTimer  = null;
 
 Object.defineProperty(window, "carrito", {
   get() { return mesaSeleccionada ? mesaSeleccionada.carrito : []; },
@@ -86,14 +87,20 @@ function iniciarRealtimeMesas() {
     .subscribe();
 }
 function mapMesa(m) {
+  const carrito = Array.isArray(m.carrito) ? m.carrito : [];
+  const abiertaDesde = carrito.length > 0 && m.fecha_apertura
+    ? new Date(m.fecha_apertura).getTime()
+    : null;
+
   return {
     id:           m.id,
     numero:       m.numero,
     nombre:       m.nombre || `Mesa ${m.numero}`,
-    carrito:      Array.isArray(m.carrito) ? m.carrito : [],
+    carrito,
     descuento:    Number(m.descuento || 0),
     descuentoDesc: "",
-    ocupada:      !m.mesa_cerrada
+    ocupada:      !m.mesa_cerrada,
+    abiertaDesde
   };
 }
 
@@ -297,16 +304,27 @@ async function guardarMesaSupabase(mesa) {
   const subtotal = mesa.carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
   const descuento = mesa.descuento || 0;
   const total = subtotal - descuento;
+  const mesaVacia = mesa.carrito.length === 0;
+
+  if (!mesaVacia && !mesa.abiertaDesde) {
+    mesa.abiertaDesde = Date.now();
+  }
+
+  if (mesaVacia) {
+    mesa.abiertaDesde = null;
+  }
 
   const { error } = await window.supabase_res
     .from("mesas")
     .update({
-      carrito:      mesa.carrito,
+      carrito:        mesa.carrito,
       subtotal,
       descuento,
       total,
-      nombre:       mesa.nombre,
-      mesa_cerrada: mesa.carrito.length === 0
+      nombre:         mesa.nombre,
+      mesa_cerrada:   mesaVacia,
+      fecha_apertura: mesaVacia ? null : new Date(mesa.abiertaDesde).toISOString(),
+      fecha_cierre:   mesaVacia ? new Date().toISOString() : null
     })
     .eq("id", mesa.id);
 
@@ -354,7 +372,7 @@ async function initMesas() {
 async function crearMesaSupabase(numero, nombreDefault = "") {
   const { data, error } = await window.supabase_res
     .from("mesas")
-    .insert({ numero, nombre: nombreDefault, carrito: [], mesa_cerrada: true })
+    .insert({ numero, nombre: nombreDefault, carrito: [], mesa_cerrada: true, fecha_apertura: null, fecha_cierre: null })
     .select()
     .single();
 
@@ -367,12 +385,13 @@ async function crearMesaSupabase(numero, nombreDefault = "") {
     carrito:      [],
     descuento:    0,
     descuentoDesc: "",
-    ocupada:      false
+    ocupada:      false,
+    abiertaDesde: null
   };
 }
 
 function crearMesaLocal(numero, nombreDefault = "") {
-  return { numero, nombre: nombreDefault, carrito: [], ocupada: false, descuento: 0, descuentoDesc: "" };
+  return { numero, nombre: nombreDefault, carrito: [], ocupada: false, descuento: 0, descuentoDesc: "", abiertaDesde: null };
 }
 
 function mesaLabel(mesa) {
@@ -393,6 +412,8 @@ function renderMesas() {
     const total  = mesa.carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
     const items  = mesa.carrito.reduce((s, i) => s + i.cantidad, 0);
     const ocupada = mesa.carrito.length > 0;
+    const tiempoAbierta = ocupada ? calcularTiempoMesa(mesa.abiertaDesde) : "";
+    const alertaTiempo = ocupada ? claseTiempoMesa(mesa.abiertaDesde) : "";
 
     const div = document.createElement("div");
     div.className = "mesa-card" + (ocupada ? " ocupada" : "");
@@ -402,6 +423,7 @@ function renderMesas() {
       <div class="mesa-icon">${ocupada ? "🍽️" : `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 32 32"><circle cx="16" cy="16" r="10" fill="#22c55e"/></svg>`}</div>
       <div class="mesa-status">${ocupada ? fmt(total) : "Libre"}</div>
       ${items > 0 ? `<div class="mesa-items">${items} ítem${items !== 1 ? "s" : ""}</div>` : ""}
+      ${tiempoAbierta ? `<div class="mesa-tiempo ${alertaTiempo}">⏱ ${tiempoAbierta}</div>` : ""}
       <div class="edit-hint">mantener = editar</div>
     `;
 
@@ -435,6 +457,70 @@ function renderMesas() {
   });
 
   document.getElementById("stateCenter").style.display = "none";
+  actualizarTotalMesas();
+  iniciarTimerTiempoMesas();
+}
+
+function calcularTiempoMesa(timestamp) {
+  if (!timestamp) return "recién abierta";
+
+  const diffMs = Math.max(0, Date.now() - timestamp);
+  const totalMinutos = Math.floor(diffMs / 60000);
+  const horas = Math.floor(totalMinutos / 60);
+  const minutos = totalMinutos % 60;
+
+  if (horas > 0) return `abierta hace ${horas}h ${minutos}m`;
+  if (totalMinutos > 0) return `abierta hace ${totalMinutos}m`;
+  return "recién abierta";
+}
+
+function claseTiempoMesa(timestamp) {
+  if (!timestamp) return "tiempo-ok";
+
+  const minutos = Math.floor((Date.now() - timestamp) / 60000);
+  if (minutos >= 90) return "tiempo-alto";
+  if (minutos >= 30) return "tiempo-medio";
+  return "tiempo-ok";
+}
+
+function iniciarTimerTiempoMesas() {
+  if (mesasTiempoTimer) return;
+
+  mesasTiempoTimer = setInterval(() => {
+    const mesasScreen = document.getElementById("mesasScreen");
+    const pantallaMesasVisible = mesasScreen && mesasScreen.style.display !== "none";
+
+    if (pantallaMesasVisible) {
+      renderMesas();
+    }
+  }, 60000);
+}
+
+function asegurarMesaAbierta() {
+  if (!mesaSeleccionada) return;
+  if (mesaSeleccionada.carrito.length === 0 && !mesaSeleccionada.abiertaDesde) {
+    mesaSeleccionada.abiertaDesde = Date.now();
+  }
+}
+
+function actualizarTotalMesas() {
+  const ocupadas = mesas.filter(mesa => mesa.carrito.length > 0).length;
+
+  const items = mesas.reduce((sum, mesa) => {
+    return sum + mesa.carrito.reduce((s, item) => s + item.cantidad, 0);
+  }, 0);
+
+  const total = mesas.reduce((sum, mesa) => {
+    return sum + mesa.carrito.reduce((s, item) => s + item.precio * item.cantidad, 0);
+  }, 0);
+
+  const ocupadasEl = document.getElementById("mesasOcupadasTotal");
+  const itemsEl = document.getElementById("mesasItemsTotal");
+  const totalEl = document.getElementById("mesasMontoTotal");
+
+  if (ocupadasEl) ocupadasEl.textContent = ocupadas;
+  if (itemsEl) itemsEl.textContent = items;
+  if (totalEl) totalEl.textContent = fmt(total);
 }
 
 function seleccionarMesa(mesa) {
@@ -653,6 +739,7 @@ function recargarProductos() {
    CARRITO
 ═══════════════════════════════════════ */
 function addToCart(prod) {
+  asegurarMesaAbierta();
   // Agrupa por producto + metodo_pago (efectivo por defecto)
   const item = carrito.find(i => i.id === prod.id && i.metodo_pago === "efectivo");
   if (item) item.cantidad++;
@@ -682,6 +769,7 @@ function changeQty(lineKey, delta) {
   if (idx === -1) return;
   carrito[idx].cantidad += delta;
   if (carrito[idx].cantidad <= 0) carrito.splice(idx, 1);
+  if (mesaSeleccionada && carrito.length === 0) mesaSeleccionada.abiertaDesde = null;
   updateTotal();
   renderCartItems();
   applyFilters();
@@ -748,6 +836,7 @@ function cambiarMetodoPagoTodos(prodId, nuevoMetodo) {
 function removeFromCart(lineKey) {
   const [id, metodo] = lineKey.split(":::");
   carrito = carrito.filter(i => !(i.id === id && i.metodo_pago === metodo));
+  if (mesaSeleccionada && carrito.length === 0) mesaSeleccionada.abiertaDesde = null;
   saveCart();
   updateTotal();
   applyFilters();
@@ -756,7 +845,10 @@ function removeFromCart(lineKey) {
 
 function clearCart() {
   if (!confirm("¿Vaciar todo el carrito?")) return;
-  if (mesaSeleccionada) mesaSeleccionada.carrito = [];
+  if (mesaSeleccionada) {
+    mesaSeleccionada.carrito = [];
+    mesaSeleccionada.abiertaDesde = null;
+  }
   document.getElementById("discount").value     = "";
   document.getElementById("discountDesc").value = "";
   currentDiscount = 0;
@@ -788,15 +880,25 @@ async function saveCart() {
       const descuento = parseFloat(document.getElementById("discount").value) || 0;
       const total = subtotal - subtotal * descuento / 100;
       const carritoClonado = JSON.parse(JSON.stringify(carrito));
+      const mesaVacia = carritoClonado.length === 0;
+
+      if (!mesaVacia && !mesaSeleccionada.abiertaDesde) {
+        mesaSeleccionada.abiertaDesde = Date.now();
+      }
+      if (mesaVacia) {
+        mesaSeleccionada.abiertaDesde = null;
+      }
 
       const { error } = await window.supabase_res
         .from("mesas")
         .update({
-          carrito:      carritoClonado,
+          carrito:        carritoClonado,
           subtotal,
           descuento,
           total,
-          mesa_cerrada: carritoClonado.length === 0
+          mesa_cerrada:   mesaVacia,
+          fecha_apertura: mesaVacia ? null : new Date(mesaSeleccionada.abiertaDesde).toISOString(),
+          fecha_cierre:   mesaVacia ? new Date().toISOString() : null
         })
         .eq("id", mesaSeleccionada.id);
 
@@ -1438,7 +1540,7 @@ async function cobrarVenta() {
 
     const { error: errMesa } = await window.supabase_res
       .from("mesas")
-      .update({ carrito: [], subtotal: 0, descuento: 0, total: 0, metodo_pago: metodoPrincipal, mesa_cerrada: true, fecha_cierre: new Date().toISOString() })
+      .update({ carrito: [], subtotal: 0, descuento: 0, total: 0, metodo_pago: metodoPrincipal, mesa_cerrada: true, fecha_apertura: null, fecha_cierre: new Date().toISOString() })
       .eq("id", mesaSeleccionada.id);
 
     if (errMesa) throw errMesa;
@@ -1447,6 +1549,7 @@ async function cobrarVenta() {
       mesaSeleccionada.carrito       = [];
       mesaSeleccionada.descuento     = 0;
       mesaSeleccionada.descuentoDesc = "";
+      mesaSeleccionada.abiertaDesde  = null;
     }
     document.getElementById("discount").value     = "";
     document.getElementById("discountDesc").value = "";
